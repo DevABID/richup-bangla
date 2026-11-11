@@ -1,0 +1,10 @@
+# Render Blueprint: New > Blueprint > pick this repo, and Render does the rest.
+services:
+  - type: web
+    name: dhoni-hou
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true

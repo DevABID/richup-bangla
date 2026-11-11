@@ -1,0 +1,7 @@
+# Redis for production-like local runs:  docker compose up -d
+# then start Django with REDIS_URL=redis://localhost:6379/0
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
