@@ -105,8 +105,8 @@ def _c(bn, en, **action):
 
 
 NOTICE_BOARD = [
-    _c("নতুন সেমিস্টার শুরু! ভর্তিতে যান, ৳২০০ উপবৃত্তি নিন",
-       "New semester! Go to Admission, collect your ৳200 stipend", type="move_to", tile=0),
+    _c("নতুন সেমিস্টার শুরু! ভর্তিতে যান, উপবৃত্তি নিন",
+       "New semester! Go to Admission, collect your stipend", type="move_to", tile=0),
     _c("{name}-এ ফ্রেন্ডলি ম্যাচ! এখনই চলে যান",
        "Friendly match at {name}! Go there now", type="move_to", tile=39),
     _c("{name}-এ সারপ্রাইজ CT! দৌড়ান",
@@ -140,7 +140,7 @@ NOTICE_BOARD = [
 ]
 
 BATCH_GROUP = [
-    _c("উপবৃত্তি এসেছে! ভর্তিতে যান, ৳২০০ নিন", "Stipend arrived! Go to Admission, collect ৳200",
+    _c("উপবৃত্তি এসেছে! ভর্তিতে যান, টাকা নিন", "Stipend arrived! Go to Admission and collect it",
        type="move_to", tile=0),
     _c("টিউশনির বেতন একসাথে পেলেন! ৳২০০", "All your tuition money came at once! ৳200", type="money", amount=200),
     _c("জুনিয়রদের চা খাওয়ালেন — ভালো সিনিয়র হওয়ার খরচ ৳৫০",

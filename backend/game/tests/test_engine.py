@@ -83,6 +83,17 @@ class EngineTests(unittest.TestCase):
         g.handle("p0", "roll")             # 37 + 7 = 44 -> 4 (income tax)
         self.assertEqual(g.p("p0")["money"], 1500 + 200 - 200)
 
+    def test_host_sets_start_salary(self):
+        g = started(rolls=[3, 4], go_salary=500)
+        g.p("p0")["position"] = 37
+        g.handle("p0", "roll")             # passes Start, lands on income tax
+        self.assertEqual(g.p("p0")["money"], 1500 + 500 - 200)
+        g2 = started(rolls=[3, 4], go_salary=0)
+        g2.p("p0")["position"] = 37
+        g2.handle("p0", "roll")
+        self.assertEqual(g2.p("p0")["money"], 1500 - 200)
+        self.assertFalse(any(e["type"] == "passed_go" for e in g2.s["log"]))
+
     def test_auction(self):
         g = started(rolls=[1, 2])
         g.handle("p0", "roll")

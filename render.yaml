@@ -8,3 +8,9 @@ services:
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
+      # Map requests are emailed to you. Set these in the Render dashboard
+      # (Environment tab), not here, because this file is public.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAP_REQUEST_EMAIL
+        sync: false

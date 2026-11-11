@@ -4,16 +4,14 @@ import { useGame } from "../lib/store";
 import { money, tileName } from "../lib/format";
 import { gridPos, tileCenter } from "../lib/layout";
 import { describeEvent, HIDDEN_EVENTS } from "../lib/events";
-import { placeWords } from "../lib/places";
-import ActionPanel from "./ActionPanel";
-import Dice from "./Dice";
+import TurnControls from "./TurnControls";
 
 function Houses({ count }) {
   if (count === 5) return <span className="hotel" />;
   return Array.from({ length: count }, (_, i) => <span key={i} className="house" />);
 }
 
-function Tile({ tile, prop, owner, lang, onClick }) {
+function Tile({ tile, prop, owner, lang, onClick, salary }) {
   const { row, col, side } = gridPos(tile.id);
   const corner = tile.id % 10 === 0;
   const icon = tile.icon; // each map sets its own icons
@@ -33,9 +31,12 @@ function Tile({ tile, prop, owner, lang, onClick }) {
       )}
       <span className="body">
         {icon && <span className="icon" aria-hidden="true">{icon}</span>}
-        <span className="name">{name}</span>
-        {ownable && !prop && <span className="price">{money(tile.price, lang)}</span>}
-        {tile.type === "tax" && <span className="price">{money(tile.amount, lang)}</span>}
+        <span className="text">
+          <span className="name">{name}</span>
+          {ownable && !prop && <span className="price">{money(tile.price, lang)}</span>}
+          {tile.type === "tax" && <span className="price">{money(tile.amount, lang)}</span>}
+          {tile.type === "go" && salary > 0 && <span className="price">+{money(salary, lang)}</span>}
+        </span>
       </span>
       {owner && <span className="owner" style={{ "--owner": owner.color }} />}
     </button>
@@ -66,32 +67,26 @@ function Token({ player, slot, me }) {
   );
 }
 
-export default function Board({ onTileClick }) {
+// compact: on phones the dice and buttons live in a bar under the board instead
+export default function Board({ onTileClick, compact = false }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { game, board, cards, you } = useGame();
   const ownerOf = (id) => game.players.find((p) => p.id === game.properties[id]?.owner);
 
   const visibleLog = game.log.filter((e) => !HIDDEN_EVENTS.has(e.type)).slice(-14).reverse();
-  const lastRoll = [...game.log].reverse().find((e) => e.type === "rolled");
   const alive = game.players.filter((p) => !p.bankrupt);
 
   return (
     <div className="board">
       {board.map((tile) => (
         <Tile key={tile.id} tile={tile} prop={game.properties[tile.id]} owner={ownerOf(tile.id)}
-          lang={lang} onClick={() => onTileClick(tile.id)} />
+          lang={lang} onClick={() => onTileClick(tile.id)} salary={game.settings.go_salary ?? 200} />
       ))}
 
-      <div className="center">
+      <div className={`center ${compact ? "compact" : ""}`}>
         <h1 className="logo">{t("app.title")}</h1>
-        <div style={{ display: "grid", gap: 10, justifyItems: "center", width: "100%" }}>
-          <Dice dice={game.dice} rollId={lastRoll?.id} />
-          <ActionPanel />
-          {game.settings.free_parking_pot && game.pot > 0 && (
-            <div className="muted">{t("game.pot", { ...placeWords(board, lang), amount: money(game.pot, lang) })}</div>
-          )}
-        </div>
+        {!compact && <TurnControls />}
         <div className="center-log" aria-label={t("game.log")}>
           {visibleLog.map((ev, i) => (
             <div key={ev.id} className={i === 0 ? "latest" : ""}>

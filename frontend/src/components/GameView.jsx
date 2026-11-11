@@ -4,12 +4,14 @@ import { useTranslation } from "react-i18next";
 import { playerById, useGame } from "../lib/store";
 import { tileName } from "../lib/format";
 import { deckTile } from "../lib/places";
+import { useMedia } from "../lib/useMedia";
 import Board from "./Board";
 import Chat from "./Chat";
 import Modal from "./Modal";
 import PlayersPanel from "./PlayersPanel";
 import PropertyModal from "./PropertyModal";
 import TradeModal from "./TradeModal";
+import TurnControls from "./TurnControls";
 import VoicePanel from "./VoicePanel";
 
 // Shows a drawn Chance/Community card to everyone for a few seconds.
@@ -40,6 +42,7 @@ export default function GameView({ voice }) {
   const [tradeWith, setTradeWith] = useState(undefined);
   const [card, closeCard] = useCardPopup(game);
   const winner = playerById(game, game.winner);
+  const compact = useMedia("(max-width: 700px)");
 
   return (
     <div className="game-layout">
@@ -49,7 +52,12 @@ export default function GameView({ voice }) {
       </div>
 
       <div className="board-wrap">
-        <Board onTileClick={setTileModal} />
+        <Board onTileClick={setTileModal} compact={compact} />
+        {compact && (
+          <div className="dock">
+            <TurnControls />
+          </div>
+        )}
       </div>
 
       <div className="side">

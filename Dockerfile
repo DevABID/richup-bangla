@@ -17,5 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 ENV FRONTEND_DIST=/app/frontend/dist DJANGO_DEBUG=0
+RUN python manage.py collectstatic --noinput
 EXPOSE 8000
-CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
+# On start: create/update database tables, then serve the game.
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]

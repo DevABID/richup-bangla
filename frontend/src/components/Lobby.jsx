@@ -107,6 +107,11 @@ export default function Lobby({ voice }) {
           })}
         </div>
 
+        <p className="cta-line" style={{ textAlign: "left" }}>
+          {t("request.cta")}{" "}
+          <a href="/request-map" target="_blank" rel="noopener">{t("request.ctaLink")} ↗</a>
+        </p>
+
         <h3 style={{ marginTop: 18 }}>{t("lobby.settings")}</h3>
         <div className="settings-list">
           <label className="setting">
@@ -119,6 +124,12 @@ export default function Lobby({ voice }) {
             {t("lobby.set.starting_cash")}
             <select disabled={!isHost} value={s.starting_cash} onChange={(e) => update("starting_cash", e.target.value)}>
               {[1000, 1500, 2000, 3000].map((n) => <option key={n} value={n}>{money(n, lang)}</option>)}
+            </select>
+          </label>
+          <label className="setting">
+            {t("lobby.set.go_salary", placeWords(board, lang))}
+            <select disabled={!isHost} value={s.go_salary ?? 200} onChange={(e) => update("go_salary", e.target.value)}>
+              {[0, 100, 200, 300, 400, 500].map((n) => <option key={n} value={n}>{money(n, lang)}</option>)}
             </select>
           </label>
           {TOGGLES.map((key) => (

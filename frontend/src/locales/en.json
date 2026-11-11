@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Dhoni Hou",
+    "title": "Tanksal",
     "tagline": "Buy, build and trade your way across Bangladesh with friends",
     "language": "বাংলা",
     "connecting": "Connecting…",
@@ -40,7 +40,8 @@
       "even_build": "Build evenly",
       "double_rent_full_set": "Double rent on full set",
       "mortgage": "Allow mortgages",
-      "randomize_order": "Random turn order"
+      "randomize_order": "Random turn order",
+      "go_salary": "Collect when passing {{start}}"
     },
     "map": "Map",
     "mapRange": "From {{from}} up to {{to}}"
@@ -68,7 +69,8 @@
     "winner": "{{name}} wins!",
     "winnerSub": "The richest player standing.",
     "backHome": "Back to home",
-    "ok": "OK"
+    "ok": "OK",
+    "tapDice": "Tap the dice to roll"
   },
   "auction": {
     "title": "Auction: {{tile}}",
@@ -207,5 +209,45 @@
     "unknown_action": "Request not understood",
     "unknown_player": "Player not found",
     "unknown_map": "That map doesn't exist"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "switch": "Switch theme"
+  },
+  "request": {
+    "title": "Request a new map",
+    "intro": "Want a map of your city, campus or a favourite theme? Send the details. The best ideas get added to the game in a future update.",
+    "fields": {
+      "map_name": "Map name",
+      "theme": "What is the map about?",
+      "places": "Place names",
+      "requester_name": "Your name",
+      "contact": "Contact (optional)"
+    },
+    "ph": {
+      "map_name": "e.g. Chattogram City, DU Campus",
+      "theme": "e.g. Chattogram's famous areas, food spots and hangouts",
+      "places": "From cheapest to priciest, one per line:\nKarnaphuli Ghat\nNew Market\n…\nPatenga Beach",
+      "contact": "Email, phone or Facebook"
+    },
+    "placesHint": "The map needs 22 places, cheapest to priciest. You can also suggest 4 transport spots, 2 utilities, and funny card or tagline ideas.",
+    "placeCount": "{{count}} places so far",
+    "submit": "Send request",
+    "sending": "Sending…",
+    "thanksTitle": "Thank you!",
+    "thanksBody": "Your request for the “{{name}}” map has been received.",
+    "another": "Send another",
+    "backHome": "Back to home",
+    "cta": "Want a map of your area or campus?",
+    "ctaLink": "Request a new map",
+    "errors": {
+      "required": "Please fill in “{{field}}”",
+      "too_short": "Please add a bit more to “{{field}}”",
+      "too_long": "“{{field}}” is too long",
+      "slow_down": "You've sent several requests. Please try again a little later.",
+      "bad_request": "The request couldn't be sent",
+      "network": "Couldn't send. Check your internet connection and try again."
+    }
   }
 }

@@ -8,7 +8,7 @@ pay_each, collect_each, repairs, nearest.
 """
 
 CHANCE = [
-    {"bn": "শুরুতে যান, ৳২০০ নিন", "en": "Advance to Start, collect ৳200",
+    {"bn": "{name} ঘরে চলে যান, পার হওয়ার টাকাও পাবেন", "en": "Advance to {name} and collect your salary",
      "action": {"type": "move_to", "tile": 0}},
     {"bn": "{name} বেড়াতে যান", "en": "Take a trip to {name}",
      "action": {"type": "move_to", "tile": 39}},
@@ -48,7 +48,7 @@ CHANCE = [
 ]
 
 COMMUNITY = [
-    {"bn": "শুরুতে যান, ৳২০০ নিন", "en": "Advance to Start, collect ৳200",
+    {"bn": "{name} ঘরে চলে যান, পার হওয়ার টাকাও পাবেন", "en": "Advance to {name} and collect your salary",
      "action": {"type": "move_to", "tile": 0}},
     {"bn": "ব্যাংকের ভুলে আপনার লাভ ৳২০০", "en": "Bank error in your favour: ৳200",
      "action": {"type": "money", "amount": 200}},

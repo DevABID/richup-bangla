@@ -5,3 +5,5 @@ db.sqlite3
 node_modules/
 dist/
 .env
+backend/staticfiles/
+.idea/

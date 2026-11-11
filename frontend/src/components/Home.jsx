@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getName, setName } from "../lib/identity";
 import LanguageToggle from "./LanguageToggle";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Home() {
   const { t } = useTranslation();
@@ -46,6 +47,7 @@ export default function Home() {
     <main className="home">
       <div className="home-card">
         <div className="row" style={{ justifyContent: "flex-end" }}>
+          <ThemeToggle />
           <LanguageToggle />
         </div>
         <h1 className="logo">{t("app.title")}</h1>
@@ -81,6 +83,9 @@ export default function Home() {
           </form>
           {error && <div className="debt" role="alert">{error}</div>}
         </div>
+        <p className="cta-line">
+          {t("request.cta")} <Link to="/request-map">{t("request.ctaLink")} →</Link>
+        </p>
       </div>
     </main>
   );

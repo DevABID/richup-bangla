@@ -1,4 +1,4 @@
-# ধনী হও (Dhoni Hou)
+# টাঁকশাল (Tanksal)
 
 A real-time multiplayer property-trading game set across Bangladesh, in Bangla and English, with text chat and a built-in voice call.
 
@@ -72,7 +72,7 @@ Actions: `update_settings`, `choose_color`, `kick`, `leave`, `start`, `roll`, `p
 
 ### Room rules (host can change in the lobby)
 
-Map, max players, starting cash, auctions, a "Tea break" pot for taxes and fines, no rent while in the traffic jam, even building, double rent on full sets, mortgages and random turn order.
+Map, max players, starting cash, money for passing Start, auctions, a "Tea break" pot for taxes and fines, no rent while in the traffic jam, even building, double rent on full sets, mortgages and random turn order.
 
 ## Maps
 
@@ -94,6 +94,20 @@ To add a map:
 5. Run the tests. `test_maps.py` checks the map is complete and plays random games on it.
 
 The lobby shows the new map automatically, and interface text such as "stuck in Retake" uses the map's own corner names.
+
+## Map requests
+
+Anyone can suggest a new map at `/request-map` (linked from the home page and the lobby): a map name, what it's about, the place names, and optionally their name and contact. A hidden bot trap and a limit of 3 requests per 10 minutes per person keep out spam.
+
+Each request is **emailed to you**. Render's free plan blocks normal email (SMTP), so the game sends mail through Resend's web API instead:
+
+1. Sign up at resend.com **with the email address that should receive the requests**. On the free plan, Resend only delivers to that address (3,000 emails a month, 100 a day).
+2. In Resend, open **API Keys** and create a key (it starts with `re_`).
+3. In Render, open the service's **Environment** tab and add `RESEND_API_KEY` (the key) and `MAP_REQUEST_EMAIL` (your address). Keep them out of the code, since the repository is public.
+
+When a requester gives an email address as their contact, you can reply to the email to answer them directly.
+
+Requests are also saved in the database, and you can optionally post them to a Discord channel by setting `DISCORD_WEBHOOK_URL`.
 
 ## Voice calls
 

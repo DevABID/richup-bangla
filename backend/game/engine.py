@@ -19,6 +19,7 @@ DEFAULT_SETTINGS = {
     "map": DEFAULT_MAP,
     "max_players": 6,
     "starting_cash": 1500,
+    "go_salary": GO_SALARY,      # money for passing Start, set by the host
     "auction": True,             # unbought property goes to auction
     "free_parking_pot": False,   # taxes/fines collect on "Tea break"
     "no_rent_in_jail": False,    # owners in jail don't collect rent
@@ -31,6 +32,7 @@ DEFAULT_SETTINGS = {
 SETTING_RULES = {
     "max_players": (int, 2, 8),
     "starting_cash": (int, 500, 5000),
+    "go_salary": (int, 0, 1000),
 }
 
 LOG_LIMIT = 80
@@ -373,20 +375,24 @@ class Game:
         self._log("turn", player=self.current_id)
 
     # ------------------------------------------------------------------ movement
+    def _salary(self, pl):
+        amount = self.s["settings"].get("go_salary", GO_SALARY)
+        if amount > 0:
+            self._credit(pl, amount)
+            self._log("passed_go", player=pl["id"], amount=amount)
+
     def _move_by(self, pl, steps):
         old = pl["position"]
         new = (old + steps) % BOARD_SIZE
         if steps > 0 and new < old:
-            self._credit(pl, GO_SALARY)
-            self._log("passed_go", player=pl["id"], amount=GO_SALARY)
+            self._salary(pl)
         pl["position"] = new
         self._log("moved", player=pl["id"], to=new)
         self._land(pl)
 
     def _move_to(self, pl, tile, special=None):
         if tile < pl["position"]:
-            self._credit(pl, GO_SALARY)
-            self._log("passed_go", player=pl["id"], amount=GO_SALARY)
+            self._salary(pl)
         pl["position"] = tile
         self._log("moved", player=pl["id"], to=tile)
         self._land(pl, special)
