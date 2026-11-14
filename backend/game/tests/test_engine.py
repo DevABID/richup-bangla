@@ -239,6 +239,60 @@ class EngineTests(unittest.TestCase):
         g.handle("a", "update_settings", {"starting_cash": 99999})
         self.assertEqual(g.s["settings"]["starting_cash"], 5000)
 
+    def test_offline_player_is_eliminated_after_timeout(self):
+        clock = FakeClock()
+        g = started(n=3, clock=clock)              # default: 3 minutes
+        give(g, "p1", 1, 3)
+        g.set_online("p1", False)
+        self.assertEqual(g.next_deadline(), 1000 + 180)
+        clock.t += 179
+        g.tick()
+        self.assertFalse(g.p("p1")["bankrupt"])
+        clock.t += 1
+        g.tick()
+        self.assertTrue(g.p("p1")["bankrupt"])
+        self.assertNotIn("1", g.s["properties"])   # properties back to the bank
+        self.assertTrue(any(e["type"] == "timed_out" for e in g.s["log"]))
+        self.assertEqual(g.s["status"], "playing")  # two players are left
+
+    def test_coming_back_in_time_cancels_elimination(self):
+        clock = FakeClock()
+        g = started(n=2, clock=clock)
+        g.set_online("p1", False)
+        clock.t += 120
+        g.set_online("p1", True)
+        clock.t += 600
+        g.tick()
+        self.assertFalse(g.p("p1")["bankrupt"])
+        self.assertIsNone(g.next_deadline())
+
+    def test_offline_current_player_hands_turn_on_and_last_player_wins(self):
+        clock = FakeClock()
+        g = started(n=2, clock=clock, offline_minutes=1)
+        g.set_online("p0", False)                   # it's p0's turn
+        clock.t += 60
+        g.tick()
+        self.assertTrue(g.p("p0")["bankrupt"])
+        self.assertEqual(g.s["status"], "finished")
+        self.assertEqual(g.s["winner"], "p1")
+
+    def test_elimination_can_be_turned_off(self):
+        clock = FakeClock()
+        g = started(n=2, clock=clock, offline_minutes=0)
+        g.set_online("p1", False)
+        clock.t += 3600
+        g.tick()
+        self.assertFalse(g.p("p1")["bankrupt"])
+        self.assertIsNone(g.next_deadline())
+
+    def test_offline_in_lobby_is_not_punished(self):
+        state = new_game("L")
+        g = Game(state, ScriptedRng(), clock=FakeClock())
+        g.add_player("a", "A")
+        g.add_player("b", "B")
+        g.set_online("b", False)
+        self.assertIsNone(g.p("b")["offline_since"])
+
     def test_high_bidder_going_bankrupt_clears_bid(self):
         clock = FakeClock()
         g = started(n=3, rolls=[1, 2], clock=clock)

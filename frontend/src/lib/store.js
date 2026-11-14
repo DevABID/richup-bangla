@@ -69,6 +69,8 @@ export const useGame = create((set, get) => ({
           set({ game: msg.state, chat: msg.state.chat, board: map?.tiles ?? [], cards: map?.cards ?? {}, serverOffset: offset });
           if (shown) soundsForEvents(msg.events ?? [], get().you).forEach((name, i) => setTimeout(() => play(name), i * 180));
         };
+        // The dice sound plays as soon as the dice roll, before the token walks
+        if (shown && (msg.events ?? []).some((e) => e.type === "rolled")) play("dice");
         // A newer update replaces one that is still waiting
         clearTimeout(pendingTimer);
         const wait = walkTime(shown, msg.state);

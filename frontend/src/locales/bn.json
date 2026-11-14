@@ -41,10 +41,13 @@
       "double_rent_full_set": "পুরো সেটে দ্বিগুণ ভাড়া",
       "mortgage": "বন্ধক রাখা যাবে",
       "randomize_order": "চালের ক্রম এলোমেলো",
-      "go_salary": "{{start}} পার হলে পাবেন"
+      "go_salary": "{{start}} পার হলে পাবেন",
+      "offline_minutes": "অফলাইন থাকলে বাদ পড়বে"
     },
     "map": "মানচিত্র",
-    "mapRange": "{{from}} থেকে {{to}} পর্যন্ত"
+    "mapRange": "{{from}} থেকে {{to}} পর্যন্ত",
+    "never": "কখনো না",
+    "minutes": "{{n}} মিনিট পর"
   },
   "game": {
     "yourTurn": "আপনার চাল",
@@ -118,14 +121,22 @@
     "decline": "না",
     "cancel": "বাতিল",
     "nothing": "কিছু না",
-    "noProps": "বাণিজ্যযোগ্য জমি নেই"
+    "noProps": "বাণিজ্যযোগ্য জমি নেই",
+    "counter": "পাল্টা প্রস্তাব",
+    "counterTitle": "পাল্টা প্রস্তাব দিন",
+    "has": "হাতে আছে {{amount}}",
+    "worth": "মোট মূল্য {{amount}}",
+    "inYourFavour": "এই বাণিজ্যে আপনার লাভ {{amount}}",
+    "inTheirFavour": "এই বাণিজ্যে ওনার লাভ {{amount}}",
+    "even": "দুই দিক সমান"
   },
   "players": {
     "title": "খেলোয়াড়",
     "offline": "অফলাইন",
     "bankrupt": "দেউলিয়া",
     "myProps": "আমার জমি",
-    "none": "এখনো কোনো জমি নেই"
+    "none": "এখনো কোনো জমি নেই",
+    "offlineCountdown": "অফলাইন · {{time}} পরে বাদ"
   },
   "chat": {
     "title": "আড্ডা",
@@ -239,7 +250,8 @@
     "trade_declined": "{{name}} বাণিজ্যের প্রস্তাব ফিরিয়ে দিল",
     "bankrupt": "{{name}} দেউলিয়া হয়ে গেল",
     "winner": "{{name}} জিতেছে!",
-    "pot_collected": "{{name}} {{parking}} থেকে {{amount}} পেল"
+    "pot_collected": "{{name}} {{parking}} থেকে {{amount}} পেল",
+    "timed_out": "{{name}} অনেকক্ষণ অফলাইন থাকায় বাদ পড়ল"
   },
   "errors": {
     "not_your_turn": "এখন আপনার চাল নয়",

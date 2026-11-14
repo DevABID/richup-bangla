@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGame } from "../lib/store";
-import { money, tileName } from "../lib/format";
+import { money, num, tileName } from "../lib/format";
 import { placeWords } from "../lib/places";
 import Chat from "./Chat";
 import VoicePanel from "./VoicePanel";
@@ -124,6 +124,14 @@ export default function Lobby({ voice }) {
             {t("lobby.set.starting_cash")}
             <select disabled={!isHost} value={s.starting_cash} onChange={(e) => update("starting_cash", e.target.value)}>
               {[1000, 1500, 2000, 3000].map((n) => <option key={n} value={n}>{money(n, lang)}</option>)}
+            </select>
+          </label>
+          <label className="setting">
+            {t("lobby.set.offline_minutes")}
+            <select disabled={!isHost} value={s.offline_minutes ?? 3} onChange={(e) => update("offline_minutes", e.target.value)}>
+              {[0, 1, 2, 3, 5, 10].map((n) => (
+                <option key={n} value={n}>{n === 0 ? t("lobby.never") : t("lobby.minutes", { n: num(n, lang) })}</option>
+              ))}
             </select>
           </label>
           <label className="setting">

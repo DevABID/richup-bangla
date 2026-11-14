@@ -73,9 +73,65 @@ function noise({ at = 0, dur = 0.05, vol = 0.12, freq = 2000 } = {}) {
   src.start(t0);
 }
 
+// A low drum hit: a falling sine plus a short burst of noise
+function drum(at, { freq = 90, vol = 0.5, dur = 0.35 } = {}) {
+  tone(freq, { at, dur, vol, to: freq * 0.45 });
+  noise({ at, dur: 0.06, freq: 300, vol: vol * 0.5 });
+}
+
+// A brass-like chord: detuned sawtooth voices through a low-pass filter
+function brass(freqs, at, dur, vol = 0.05) {
+  const ac = audio();
+  if (!ac) return;
+  const t0 = ac.currentTime + at;
+  const filter = ac.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(700, t0);
+  filter.frequency.linearRampToValueAtTime(2600, t0 + 0.08);
+  filter.frequency.linearRampToValueAtTime(1400, t0 + dur);
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.04);
+  gain.gain.setValueAtTime(vol, t0 + dur * 0.7);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  filter.connect(gain).connect(ac.destination);
+  for (const f of freqs) {
+    for (const detune of [-7, 7]) {
+      const osc = ac.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = f;
+      osc.detune.value = detune;
+      osc.connect(filter);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    }
+  }
+}
+
+const N = { D3: 146.8, E3: 164.8, F3: 174.6, G3: 196, A3: 220, Bb3: 233.1, C4: 261.6, D4: 293.7, F4: 349.2, A4: 440, D5: 587.3 };
+
 const SOUNDS = {
   dice() {
-    for (let i = 0; i < 6; i++) noise({ at: i * 0.055 + Math.random() * 0.02, dur: 0.045, freq: 1800 + Math.random() * 1500 });
+    // a quick, light clatter of two dice
+    for (let i = 0; i < 4; i++) noise({ at: i * 0.05 + Math.random() * 0.015, dur: 0.035, vol: 0.09, freq: 2200 + Math.random() * 1500 });
+  },
+  // Original 5-second "mass entry" stinger for building a house or hotel:
+  // war drums, rising brass stabs, then a big held chord over a drum roll.
+  buildStinger() {
+    drum(0, { freq: 70, vol: 0.6, dur: 0.6 });
+    drum(0.45, { freq: 95 }); drum(0.62, { freq: 95 });
+    drum(0.9, { freq: 70, vol: 0.6, dur: 0.6 });
+    brass([N.D3, N.F3, N.A3], 0.9, 0.3);
+    drum(1.35, { freq: 95 }); drum(1.52, { freq: 95 });
+    drum(1.8, { freq: 70, vol: 0.6, dur: 0.6 });
+    brass([N.E3, N.G3, N.Bb3], 1.8, 0.3);
+    drum(2.25, { freq: 95 }); drum(2.42, { freq: 95 });
+    drum(2.7, { freq: 70, vol: 0.6, dur: 0.6 });
+    brass([N.F3, N.A3, N.C4], 2.7, 0.35);
+    for (let i = 0; i < 8; i++) drum(3.05 + i * 0.07, { freq: 120 + i * 6, vol: 0.18 + i * 0.03, dur: 0.12 });
+    drum(3.6, { freq: 60, vol: 0.7, dur: 0.9 });
+    brass([N.D3, N.A3, N.D4, N.F4, N.A4], 3.6, 1.3, 0.06);
+    tone(N.D5, { at: 3.6, dur: 1.3, type: "triangle", vol: 0.05 });
   },
   buy() {
     tone(988, { dur: 0.1, type: "square", vol: 0.07 });
@@ -110,6 +166,11 @@ const SOUNDS = {
     noise({ dur: 0.04, freq: 900, vol: 0.18 });
     noise({ at: 0.12, dur: 0.04, freq: 900, vol: 0.18 });
   },
+  offer() {
+    tone(659, { dur: 0.12, type: "triangle", vol: 0.12 });
+    tone(880, { at: 0.12, dur: 0.12, type: "triangle", vol: 0.12 });
+    tone(1319, { at: 0.24, dur: 0.25, type: "triangle", vol: 0.12 });
+  },
   chat() { tone(1318, { dur: 0.06, vol: 0.06 }); tone(1760, { at: 0.06, dur: 0.08, vol: 0.06 }); },
   setComplete() {
     [784, 988, 1175, 1568].forEach((f, i) => tone(f, { at: i * 0.07, dur: 0.3, type: "triangle", vol: 0.11 }));
@@ -121,9 +182,58 @@ const SOUNDS = {
   bankrupt() { tone(330, { dur: 0.6, type: "sawtooth", vol: 0.07, to: 110 }); },
 };
 
+// ---------------------------------------------------------------- custom sound files
+// Any of these files you add to frontend/public/sounds/ replaces the built-in
+// sound of the same name. Only use audio you have the right to use.
+const CUSTOM = { buildStinger: "/sounds/build.mp3" };
+const MAX_CUSTOM_SECONDS = 5;
+const customBuffers = {}; // name -> AudioBuffer | null (null = no file, use built-in)
+
+async function loadCustom(name) {
+  if (name in customBuffers) return customBuffers[name];
+  customBuffers[name] = null;
+  try {
+    const res = await fetch(CUSTOM[name]);
+    const type = res.headers.get("content-type") || "";
+    // a missing file falls through to the game page, which is HTML, not audio
+    if (!res.ok || type.includes("text/html")) return null;
+    const ac = audio();
+    if (!ac) return null;
+    customBuffers[name] = await ac.decodeAudioData(await res.arrayBuffer());
+  } catch {
+    customBuffers[name] = null;
+  }
+  return customBuffers[name];
+}
+
+function playBuffer(buffer) {
+  const ac = audio();
+  if (!ac) return;
+  const src = ac.createBufferSource();
+  const gain = ac.createGain();
+  const t0 = ac.currentTime;
+  const len = Math.min(buffer.duration, MAX_CUSTOM_SECONDS);
+  gain.gain.setValueAtTime(0.8, t0);
+  gain.gain.setValueAtTime(0.8, t0 + Math.max(0, len - 0.6));
+  gain.gain.linearRampToValueAtTime(0.0001, t0 + len);   // short fade-out at the end
+  src.buffer = buffer;
+  src.connect(gain).connect(ac.destination);
+  src.start(t0);
+  src.stop(t0 + len + 0.05);
+}
+
+// Check for custom files once the player has interacted (browsers need that for audio)
+if (typeof window !== "undefined") {
+  window.addEventListener("pointerdown", () => Object.keys(CUSTOM).forEach(loadCustom), { once: true, capture: true });
+}
+
 export function play(name) {
   if (!soundOn()) return;
   try {
+    if (CUSTOM[name] && customBuffers[name]) {
+      playBuffer(customBuffers[name]);
+      return;
+    }
     SOUNDS[name]?.();
   } catch {
     /* sound is optional */
@@ -141,11 +251,14 @@ export function soundsForEvents(events, me) {
       case "paid_rent": out.push(ev.owner === me ? "coin" : ev.player === me ? "pay" : null); break;
       case "paid": out.push(ev.player === me ? "pay" : null); break;
       case "card": out.push("card"); break;
+      case "trade_proposed": out.push(ev.to === me ? "offer" : null); break;
+      case "trade_accepted": out.push("buy"); break;
       case "jail": out.push("jail"); break;
       case "bid": out.push("bid"); break;
-      case "built": case "sold_house": out.push("build"); break;
+      case "built": out.push("buildStinger"); break;
+      case "sold_house": out.push("build"); break;
       case "turn": out.push(ev.player === me ? "yourTurn" : null); break;
-      case "bankrupt": out.push("bankrupt"); break;
+      case "bankrupt": case "timed_out": out.push("bankrupt"); break;
       case "winner": out.push("win"); break;
       default:
     }

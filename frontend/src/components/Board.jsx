@@ -28,9 +28,16 @@ function HotelIcon() {
   );
 }
 
+// One house icon with a count ("🏠×2"), or a hotel
 function Houses({ count }) {
+  if (!count) return null;
   if (count === 5) return <HotelIcon />;
-  return Array.from({ length: count }, (_, i) => <HouseIcon key={i} />);
+  return (
+    <span className="house-count">
+      <HouseIcon />
+      {count > 1 && <b>×{count}</b>}
+    </span>
+  );
 }
 
 // First letter of a name, keeping Bangla letters with their vowel signs whole

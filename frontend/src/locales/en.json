@@ -41,10 +41,13 @@
       "double_rent_full_set": "Double rent on full set",
       "mortgage": "Allow mortgages",
       "randomize_order": "Random turn order",
-      "go_salary": "Collect when passing {{start}}"
+      "go_salary": "Collect when passing {{start}}",
+      "offline_minutes": "Eliminate players who go offline"
     },
     "map": "Map",
-    "mapRange": "From {{from}} up to {{to}}"
+    "mapRange": "From {{from}} up to {{to}}",
+    "never": "Never",
+    "minutes": "After {{n}} min"
   },
   "game": {
     "yourTurn": "Your turn",
@@ -118,14 +121,22 @@
     "decline": "Decline",
     "cancel": "Cancel",
     "nothing": "Nothing",
-    "noProps": "No tradable property"
+    "noProps": "No tradable property",
+    "counter": "Counter",
+    "counterTitle": "Make a counter-offer",
+    "has": "Has {{amount}}",
+    "worth": "Total value {{amount}}",
+    "inYourFavour": "You come out ahead by {{amount}}",
+    "inTheirFavour": "They come out ahead by {{amount}}",
+    "even": "Both sides are equal"
   },
   "players": {
     "title": "Players",
     "offline": "Offline",
     "bankrupt": "Bankrupt",
     "myProps": "My property",
-    "none": "No property yet"
+    "none": "No property yet",
+    "offlineCountdown": "Offline · out in {{time}}"
   },
   "chat": {
     "title": "Chat",
@@ -239,7 +250,8 @@
     "trade_declined": "{{name}} declined a trade",
     "bankrupt": "{{name}} went bankrupt",
     "winner": "{{name}} wins!",
-    "pot_collected": "{{name}} collected {{amount}} at {{parking}}"
+    "pot_collected": "{{name}} collected {{amount}} at {{parking}}",
+    "timed_out": "{{name}} was offline too long and is out"
   },
   "errors": {
     "not_your_turn": "It's not your turn",

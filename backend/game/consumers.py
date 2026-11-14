@@ -23,46 +23,47 @@ from .maps import maps_for_client
 from .store import store
 
 log = logging.getLogger(__name__)
-_auction_timers = {}  # room -> asyncio.Task that ends the room's auction on time
+_room_timers = {}  # room -> asyncio.Task that wakes up for the room's next deadline
 
 
 async def broadcast(room, state, events):
     await get_channel_layer().group_send(
         f"room_{room}",
-        # server_time lets every browser line up its countdown with the server's clock
+        # server_time lets every browser line up its countdowns with the server's clock
         {"type": "state.update", "state": public_state(state), "events": events, "server_time": time.time()},
     )
 
 
-def watch_auction(room, state):
-    """Make sure a timer is waiting to end this room's auction, if it has one."""
-    task = _auction_timers.get(room)
-    if state.get("auction") and not (task and not task.done()):
-        _auction_timers[room] = asyncio.ensure_future(_run_auction_timer(room))
+def watch_room(room, state):
+    """Make sure a timer is waiting for this room's next deadline: an auction
+    ending, or an offline player running out of time."""
+    task = _room_timers.get(room)
+    if Game(state).next_deadline() is not None and not (task and not task.done()):
+        _room_timers[room] = asyncio.ensure_future(_run_room_timer(room))
 
 
-async def _run_auction_timer(room):
+async def _run_room_timer(room):
     try:
         while True:
             state = await store.get(room)
-            auc = state and state.get("auction")
-            if not auc:
+            deadline = state and Game(state).next_deadline()
+            if deadline is None:
                 return
-            await asyncio.sleep(max(0.05, auc["ends_at"] - time.time()))
+            await asyncio.sleep(max(0.05, deadline - time.time()))
             async with store.lock(room):
                 state = await store.get(room)
-                if not state or not state.get("auction"):
+                if not state:
                     return
                 game = Game(state)
                 events = game.tick()
                 if not events:
-                    continue  # a bid added time; wait again
+                    continue  # the deadline moved (a bid, or the player came back)
                 await store.save(room, state)
             await broadcast(room, state, events)
     except Exception:
-        log.exception("auction timer failed for room %s", room)
+        log.exception("room timer failed for room %s", room)
     finally:
-        _auction_timers.pop(room, None)
+        _room_timers.pop(room, None)
 
 
 ROOM_RE = re.compile(r"^[A-Z0-9]{4,10}$")
@@ -185,7 +186,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
 
     async def _broadcast(self, state, events):
         await broadcast(self.room, state, events)
-        watch_auction(self.room, state)
+        watch_room(self.room, state)
 
     # -------------------------------------------------------------- group events
     async def state_update(self, event):

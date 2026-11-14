@@ -10,6 +10,7 @@ import Modal from "./Modal";
 import PlayersPanel from "./PlayersPanel";
 import PropertyModal from "./PropertyModal";
 import TradeModal from "./TradeModal";
+import TradeOffers from "./TradeOffers";
 import TurnControls from "./TurnControls";
 import VoicePanel from "./VoicePanel";
 
@@ -26,7 +27,6 @@ export default function GameView({ voice }) {
     <div className="game-layout">
       <div className="side">
         <PlayersPanel onTrade={setTradeWith} onTileClick={setTileModal} />
-        <VoicePanel voice={voice} />
       </div>
 
       <div className="board-wrap">
@@ -38,7 +38,10 @@ export default function GameView({ voice }) {
         )}
       </div>
 
+      {/* voice and chat together on one side */}
       <div className="side">
+        <TradeOffers />
+        <VoicePanel voice={voice} />
         <Chat />
       </div>
 

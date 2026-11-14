@@ -74,6 +74,14 @@ Actions: `update_settings`, `choose_color`, `kick`, `leave`, `start`, `roll`, `p
 
 When a player doesn't buy a property, it goes to a timed auction. A 10-second countdown starts and every player, including the one who passed, can bid at any time with the quick-bid buttons (+2, +10, +50, +100). Each new bid gives everyone at least 6 more seconds. When the clock reaches zero, the highest bidder pays and gets the property; with no bids, it stays unsold. The server runs the clock, so every player sees the same countdown and a late bid can't sneak in.
 
+### Custom sounds
+
+To replace the build sound, put an audio file at `frontend/public/sounds/build.mp3`. It plays (for up to 5 seconds, with a short fade-out) whenever a house or hotel is built; without it, the game's own original stinger plays. That folder is published with the game, so only add audio you have the right to use.
+
+### Players who disconnect
+
+If a player goes offline during a game, a countdown starts (3 minutes by default; the host can choose 1, 2, 3, 5 or 10 minutes, or turn it off, in the lobby). Everyone sees the time left next to that player's name. If they reconnect in time, nothing happens. If not, they're eliminated as bankrupt, their properties return to the bank, and the game continues; if only one player is left, that player wins. The server runs this timer, so it works even if nobody is clicking anything.
+
 ### Sounds
 
 Dice, buying, rent, cards, jail, bids, the auction hammer, your-turn alerts and chat all have short sounds, made in the browser with the Web Audio API (no audio files). Each player can mute them with the 🔊 button.

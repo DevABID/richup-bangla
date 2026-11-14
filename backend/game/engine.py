@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = {
     "max_players": 6,
     "starting_cash": 1500,
     "go_salary": GO_SALARY,      # money for passing Start, set by the host
+    "offline_minutes": 3,        # offline this long mid-game = eliminated (0 = never)
     "auction": True,             # unbought property goes to auction
     "free_parking_pot": False,   # taxes/fines collect on "Tea break"
     "no_rent_in_jail": False,    # owners in jail don't collect rent
@@ -33,6 +34,7 @@ SETTING_RULES = {
     "max_players": (int, 2, 8),
     "starting_cash": (int, 500, 5000),
     "go_salary": (int, 0, 1000),
+    "offline_minutes": (int, 0, 10),
 }
 
 # Timed auction: a countdown starts, anyone can bid any time, and every bid
@@ -199,7 +201,7 @@ class Game:
         pl = {
             "id": pid, "name": name or "Player", "color": color, "money": 0,
             "position": 0, "in_jail": False, "jail_turns": 0, "jail_cards": [],
-            "bankrupt": False, "debt_to": None, "online": True, "voice": False,
+            "bankrupt": False, "debt_to": None, "online": True, "voice": False, "offline_since": None,
         }
         self.s["players"].append(pl)
         if not self.s["host"]:
@@ -212,8 +214,11 @@ class Game:
             pl = self.p(pid)
             pl["online"] = online
             if online:
+                pl["offline_since"] = None  # back in time: no penalty
                 return
             pl["voice"] = False
+            if self.s["status"] == "playing" and not pl["bankrupt"]:
+                pl["offline_since"] = self.clock()
             # Hand the lobby to someone who is still here
             if self.s["status"] == "lobby" and self.s["host"] == pid:
                 here = [p for p in self.s["players"] if p["online"]]
@@ -284,6 +289,9 @@ class Game:
             self.rng.shuffle(idx)
             decks[name] = idx
         self.s.update(order=order, turn=0, phase="roll", status="playing", decks=decks)
+        now = self.clock()
+        for pl in self.s["players"]:
+            pl["offline_since"] = None if pl["online"] else now
         self._log("game_started")
         self._log("turn", player=self.current_id)
 
@@ -557,12 +565,40 @@ class Game:
         self._log("bid", player=pid, amount=amount)
 
     def tick(self):
-        """Ends the auction if its time is up. Called by the server's timer and
-        before every action, so a late bid can never sneak in."""
+        """Handles everything that happens on a timer: ends the auction when its
+        time is up, and eliminates players who stayed offline too long. Called by
+        the server's timer and before every action."""
+        if self.s["status"] != "playing":
+            return self.events
         auc = self.s.get("auction")
-        if auc and self.s["status"] == "playing" and self.clock() >= auc["ends_at"]:
+        if auc and self.clock() >= auc["ends_at"]:
             self._finish_auction()
+        for pl in list(self.s["players"]):
+            if self.s["status"] != "playing":
+                break
+            deadline = self._offline_deadline(pl)
+            if deadline is not None and self.clock() >= deadline:
+                self._log("timed_out", player=pl["id"])
+                pl["debt_to"] = None        # properties go back to the bank
+                pl["offline_since"] = None
+                self._bankrupt(pl)
         return self.events
+
+    def _offline_deadline(self, pl):
+        minutes = self.s["settings"].get("offline_minutes", 0)
+        since = pl.get("offline_since")
+        if not minutes or since is None or pl["online"] or pl["bankrupt"]:
+            return None
+        return since + minutes * 60
+
+    def next_deadline(self):
+        """When the server should next call tick(), or None if nothing is waiting."""
+        if self.s["status"] != "playing":
+            return None
+        times = [d for d in (self._offline_deadline(pl) for pl in self.s["players"]) if d is not None]
+        if self.s.get("auction"):
+            times.append(self.s["auction"]["ends_at"])
+        return min(times) if times else None
 
     def _finish_auction(self):
         auc = self.s["auction"]

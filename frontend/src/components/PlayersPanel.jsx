@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { currentPlayerId, playerById, useGame } from "../lib/store";
 import { money, tileName } from "../lib/format";
 import { ownedBy } from "../lib/rules";
+import MoneyDelta from "./MoneyDelta";
+import OfflineTimer from "./OfflineTimer";
 
 // Plain helper (not a component): describes both sides of a trade.
 function summarize(trade, board, t, lang) {
@@ -21,7 +23,7 @@ export default function PlayersPanel({ onTrade, onTileClick }) {
   const me = playerById(game, you);
   const canTrade = game.status === "playing" && me && !me.bankrupt;
   const ordered = game.order.map((id) => playerById(game, id)).filter(Boolean);
-  const trades = Object.values(game.trades).filter((tr) => tr.from === you || tr.to === you);
+  const trades = Object.values(game.trades).filter((tr) => tr.from === you);
 
   return (
     <section className="panel">
@@ -29,20 +31,25 @@ export default function PlayersPanel({ onTrade, onTileClick }) {
       {ordered.map((p) => {
         const meta = [
           p.in_jail && `${board[10]?.icon ?? ""} ${tileName(board[10], lang)}`,
-          !p.online && t("players.offline"),
+          !p.online && !p.bankrupt && <OfflineTimer key="off" player={p} />,
           p.bankrupt && t("players.bankrupt"),
           p.voice && "🎙️",
           p.jail_cards.length > 0 && "🎫".repeat(p.jail_cards.length),
         ].filter(Boolean);
+        // join text and the live countdown with " · "
+        const metaNodes = meta.flatMap((m, i) => (i ? [" · ", m] : [m]));
         return (
           <div key={p.id} className={`player ${p.id === cur ? "current" : ""} ${p.bankrupt ? "out" : ""}`}>
             <span className={`dot ${p.online ? "" : "offline"}`} style={{ "--c": p.color }} />
             <span>
               {p.name}
-              {meta.length > 0 && <div className="meta">{meta.join(" · ")}</div>}
+              {meta.length > 0 && <div className="meta">{metaNodes}</div>}
             </span>
             <span style={{ textAlign: "right" }}>
-              <div className="money">{money(p.money, lang)}</div>
+              <div className="money money-wrap">
+                <MoneyDelta amount={p.money} />
+                {money(p.money, lang)}
+              </div>
               {canTrade && p.id !== you && !p.bankrupt && (
                 <button className="btn small ghost" onClick={() => onTrade(p.id)}>{t("trade.button")}</button>
               )}
@@ -60,7 +67,7 @@ export default function PlayersPanel({ onTrade, onTileClick }) {
               <button key={id} className={`chip ${game.properties[id].mortgaged ? "mortgaged" : ""}`}
                 style={{ "--c": board[id].color ?? "var(--muted)" }} onClick={() => onTileClick(id)}>
                 {tileName(board[id], lang)}
-                {game.properties[id].houses > 0 && ` ${game.properties[id].houses === 5 ? "🏨" : "🏠".repeat(game.properties[id].houses)}`}
+                {game.properties[id].houses > 0 && ` ${game.properties[id].houses === 5 ? "🏨" : game.properties[id].houses > 1 ? `🏠×${game.properties[id].houses}` : "🏠"}`}
               </button>
             ))}
           </div>
