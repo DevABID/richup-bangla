@@ -81,7 +81,9 @@ function Tile({ tile, prop, owner, lang, onClick, salary, glow }) {
   );
 }
 
-function Token({ player, slot, me }) {
+// Tokens sit in the exact centre of their tile. Several tokens on one tile are
+// spread evenly around the centre (up to 3 in a row, then a second row).
+function Token({ player, slot, count, me }) {
   const [shown, setShown] = useState(player.position);
 
   // Walk forward one tile at a time; jump for long or backward moves.
@@ -97,11 +99,15 @@ function Token({ player, slot, me }) {
   }, [shown, player.position]);
 
   const { x, y } = tileCenter(shown);
-  const dx = ((slot % 3) - 1) * 2.6;
-  const dy = (Math.floor(slot / 3) - 0.5) * 2.6;
+  const perRow = Math.min(count, 3);
+  const rows = Math.ceil(count / 3);
+  const row = Math.floor(slot / 3);
+  const inRow = row === rows - 1 ? count - row * 3 : perRow;
+  const ox = (slot % 3) - (inRow - 1) / 2; // in token widths, 0 = centre
+  const oy = row - (rows - 1) / 2;
   return (
     <span className={`token ${me ? "me" : ""}`} title={player.name}
-      style={{ left: `${x + dx}%`, top: `${y + dy}%`, "--c": player.color }}>
+      style={{ left: `${x}%`, top: `${y}%`, "--c": player.color, "--ox": ox, "--oy": oy }}>
       {initial(player.name)}
     </span>
   );
@@ -165,7 +171,7 @@ export default function Board({ onTileClick, compact = false }) {
 
       {alive.map((p) => {
         const sameTile = alive.filter((o) => o.position === p.position);
-        return <Token key={p.id} player={p} slot={sameTile.indexOf(p)} me={p.id === you} />;
+        return <Token key={p.id} player={p} slot={sameTile.indexOf(p)} count={sameTile.length} me={p.id === you} />;
       })}
     </div>
   );

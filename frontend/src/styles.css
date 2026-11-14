@@ -536,7 +536,9 @@ button, input, select { font: inherit; color: inherit; }
 }
 /* Tiny boards (phones): flags in the colour strip would be too small to see */
 @container (max-width: 520px) {
-  .tile .band .flag, .tile .flag-inline { display: none; }
+  /* small boards (phones): keep the flags, just smaller */
+  .flag.flag-round { width: 1.25em; height: 1.25em; box-shadow: 0 0 0 1px #fff, 0 1px 2px #0005; }
+  .tile .flag-inline { width: 1em; height: 1em; top: 0.2em; right: 0.2em; }
 }
 
 /* ---------- timed auction ---------- */
@@ -716,3 +718,13 @@ button, input, select { font: inherit; color: inherit; }
 .game-layout > * { min-width: 0; }
 /* side airports: keep long names clear of the corner flag */
 .tile.has-corner-flag.side-left .body, .tile.has-corner-flag.side-right .body { padding-right: 1.75em; }
+
+/* Tokens: smaller, centred in their tile; several on one tile spread around the centre */
+.token {
+  width: clamp(16px, 2.6cqmin, 28px);
+  font-size: clamp(9px, 1.35cqmin, 14px);
+  border-width: 2px;
+  transform: translate(calc(-50% + var(--ox, 0) * 105%), calc(-50% + var(--oy, 0) * 105%));
+}
+@media (min-width: 1151px) { .token { width: clamp(16px, 2.6cqmin, 28px); } }
+.token.me { outline-width: 2px; }
