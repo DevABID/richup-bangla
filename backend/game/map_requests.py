@@ -92,7 +92,60 @@ def send_discord(webhook_url, content, timeout=5):
     body = json.dumps({"content": content, "allowed_mentions": {"parse": []}}).encode()
     req = urllib.request.Request(
         webhook_url, data=body, method="POST",
-        headers={"Content-Type": "application/json", "User-Agent": "Tanksal (map requests)"},
+        headers={"Content-Type": "application/json", "User-Agent": "Jomidari (map requests)"},
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.status
+
+
+# ---------------------------------------------------------------- email (Resend)
+# Render's free plan blocks normal email (SMTP) ports, so mail goes through
+# Resend's HTTPS API instead. Free plan: send from onboarding@resend.dev to the
+# email address you signed up to Resend with.
+
+def _looks_like_email(value):
+    return bool(value) and "@" in value and " " not in value and "." in value.split("@")[-1]
+
+
+def email_subject(req):
+    name = " ".join(req["map_name"].split())  # no line breaks in a subject
+    return f"🗺️ জমিদারি: নতুন ম্যাপের অনুরোধ — {name}"[:150]
+
+
+def email_text(req, request_id=None):
+    parts = [
+        f"নতুন ম্যাপের অনুরোধ / New map request{f' #{request_id}' if request_id else ''}",
+        "",
+        f"ম্যাপের নাম / Map name: {req['map_name']}",
+    ]
+    if req.get("theme"):
+        parts += ["", "ম্যাপটা কী নিয়ে / About:", req["theme"]]
+    parts += ["", "জায়গাগুলো / Places:", req["places"], ""]
+    parts.append(f"নাম / Name: {req.get('requester_name') or '—'}")
+    parts.append(f"যোগাযোগ / Contact: {req.get('contact') or '—'}")
+    if _looks_like_email(req.get("contact")):
+        parts.append("(Reply to this email to answer them directly.)")
+    return "\n".join(parts)
+
+
+def send_resend(api_key, to, subject, text, reply_to=None, timeout=8):
+    payload = {
+        "from": "Jomidari <onboarding@resend.dev>",
+        "to": [to],
+        "subject": subject,
+        "text": text,
+    }
+    if _looks_like_email(reply_to):
+        payload["reply_to"] = reply_to
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode(),
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Jomidari (map requests)",
+        },
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.status

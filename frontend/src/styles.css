@@ -171,7 +171,7 @@ button, input, select { font: inherit; color: inherit; }
   overflow: hidden;
   container-type: size;              /* text below scales with the board */
   font-size: clamp(7px, 1.05vmin, 12px);   /* fallback for older browsers */
-  font-size: clamp(7px, 1.8cqmin, 17px);
+  /* tiles size their own text from the board (see .tile below) */
 }
 .tile {
   position: relative;
@@ -217,8 +217,8 @@ button, input, select { font: inherit; color: inherit; }
 .tile.side-top .owner { left: 0; right: 0; top: 0; height: 4px; }
 .tile.side-left .owner { top: 0; bottom: 0; left: 0; width: 4px; }
 .tile.side-right .owner { top: 0; bottom: 0; right: 0; width: 4px; }
-.house { width: 0.9em; height: 0.9em; background: #1b9e4b; border: 1px solid #fff; border-radius: 2px; }
-.hotel { width: 1.6em; height: 1em; background: var(--danger); border: 1px solid #fff; border-radius: 2px; }
+.house { width: 1.15em; height: 1.15em; flex: none; filter: drop-shadow(0 1px 1px #0005); }
+.hotel { width: 1.9em; height: 1.35em; flex: none; filter: drop-shadow(0 1px 1px #0005); }
 
 .center {
   container-type: inline-size;   /* lets the dice size themselves to the board */
@@ -261,7 +261,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .die {
   width: clamp(46px, 7.5vmin, 78px);   /* fallback for older browsers */
-  width: clamp(52px, 21cqi, 112px);     /* scales with the board, capped */
+  width: clamp(44px, 15cqi, 84px);      /* scales with the board, capped */
   aspect-ratio: 1;
   background: #fff;
   border-radius: 18%;
@@ -304,7 +304,7 @@ button, input, select { font: inherit; color: inherit; }
   border-radius: var(--radius);
   box-shadow: 0 -6px 18px #0002;
 }
-.dock .die { width: min(88px, 24vw); }
+.dock .die { width: min(64px, 17vw); }
 .dock .dice { gap: 16px; }
 .dock .actions { max-width: none; font-size: 1rem; }
 
@@ -430,7 +430,6 @@ button, input, select { font: inherit; color: inherit; }
 @media (max-width: 700px) {
   .game-layout, .lobby { grid-template-columns: 1fr; padding: 0 8px 16px; }
   .board { width: 100%; border-width: 1px; }
-  .tile .price { display: none; }
   .center.compact { grid-template-rows: auto 1fr; gap: 6px; }
   .center.compact .logo { font-size: 2.4rem; }
   .trade-cols { grid-template-columns: 1fr; }
@@ -494,7 +493,6 @@ button, input, select { font: inherit; color: inherit; }
     aspect-ratio: auto;
   }
   .board-wrap { align-self: stretch; }
-  .token { width: 2%; }
   .tile .icon { font-size: 1.8em; }
 }
 
@@ -513,3 +511,208 @@ button, input, select { font: inherit; color: inherit; }
   .tile.side-left .text, .tile.side-right .text { align-items: center; text-align: center; }
   .tile.side-left .body, .tile.side-right .body { justify-content: center; }
 }
+
+/* ---------- country flags & price badges ---------- */
+.flag { display: block; flex: none; border-radius: 2px; box-shadow: 0 0 0 1px #0003, 0 1px 2px #0003; }
+.flag.flag-shaped { box-shadow: none; filter: drop-shadow(0 1px 1px #0004); }
+.tile .band { gap: 3px; }
+.tile .band { overflow: hidden; min-height: 0; min-width: 0; }
+.flag.flag-round {
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px #fff, 0 1px 4px #0005;
+}
+/* airports: the small flag sits in the tile's corner, leaving room for the price */
+.tile .flag-inline { position: absolute; top: 0.35em; right: 0.35em; width: 1.15em; height: 1.15em; margin: 0; }
+.tile .price {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 999px;
+  padding: 0 0.5em;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+/* Tiny boards (phones): flags in the colour strip would be too small to see */
+@container (max-width: 520px) {
+  .tile .band .flag, .tile .flag-inline { display: none; }
+}
+
+/* ---------- timed auction ---------- */
+.auction { gap: 10px; }
+.auction-bid { display: grid; justify-items: center; gap: 2px; min-height: 3.2em; align-content: center; }
+.auction-bid .amount { font-size: 2em; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.auction-bid.mine .amount { color: var(--brand); }
+.auction-bid .who { font-weight: 600; }
+.timer {
+  position: relative;
+  width: min(100%, 340px);
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.timer-fill { position: absolute; inset: 0 auto 0 0; background: var(--saffron); transition: width 0.1s linear; }
+.timer.urgent .timer-fill { background: var(--pink); }
+.timer.urgent { animation: pulse 0.5s ease-in-out infinite alternate; }
+@keyframes pulse { to { transform: scale(1.03); } }
+.timer-text { position: relative; display: block; text-align: center; font-weight: 700; line-height: 24px; font-size: 0.9em; color: var(--ink); }
+.bid-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: min(100%, 380px); }
+.bid-buttons .btn { padding: 10px 0; font-size: 1.05em; }
+.small-note { font-size: 0.85em; }
+.center-log .card-line { color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .timer.urgent { animation: none; } }
+.leading-note {
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface));
+  color: var(--brand);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  max-width: 380px;
+}
+
+/* ---------- microphone help ---------- */
+.mic-help { text-align: center; justify-items: center; }
+.mic-help p { margin: 0; line-height: 1.6; }
+.mic-emoji { font-size: 2.6rem; }
+.mic-steps { text-align: left; margin: 0; padding-left: 1.4em; display: grid; gap: 8px; line-height: 1.5; justify-self: stretch; }
+.mic-steps li::marker { color: var(--pink); font-weight: 700; }
+.fake-prompt {
+  display: grid; gap: 8px; width: min(320px, 100%);
+  padding: 12px 14px; border-radius: 12px; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--line); box-shadow: 0 4px 14px #0002;
+  font-size: 0.92rem;
+}
+.fake-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+.fake-buttons span, .fake-buttons b { padding: 4px 12px; border-radius: 8px; border: 1px solid var(--line); }
+.fake-buttons b { background: #1a73e8; color: #fff; border-color: transparent; box-shadow: 0 0 0 3px color-mix(in srgb, var(--saffron) 70%, transparent); }
+.mic-test { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: center; margin-top: 8px; }
+.mic-test .small-note { grid-column: 2; }
+.meter { height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--brand); transition: width 0.1s linear; }
+.link-btn { background: none; border: 0; padding: 6px 0 0; color: var(--danger); text-decoration: underline; cursor: pointer; font-size: 0.88rem; text-align: left; }
+
+/* ---------- ownership colours, set glow, bigger tokens ---------- */
+/* The colour strip stays plain until someone buys the tile */
+.tile .band {
+  background: color-mix(in srgb, var(--ink) 6%, var(--board));
+  transition: background 0.35s ease;
+}
+.tile .band.band-owned { background: var(--owner); }
+.tile.mortgaged .band.band-owned {
+  background: repeating-linear-gradient(45deg, var(--owner) 0 6px, color-mix(in srgb, var(--owner) 35%, var(--board)) 6px 12px);
+}
+.group-dot { width: 0.8em; height: 0.8em; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px #fff, 0 1px 3px #0004; }
+.band-owned .group-dot { display: none; }
+/* airports and utilities: a thicker strip in the owner's colour */
+.tile .owner { background: var(--owner); }
+.tile.side-bottom .owner, .tile.side-top .owner { height: 7px; }
+.tile.side-left .owner, .tile.side-right .owner { width: 7px; }
+
+/* A completed colour set glows once */
+.tile.set-glow { z-index: 2; animation: set-glow 1.7s ease-out 1; }
+@keyframes set-glow {
+  0% { box-shadow: 0 0 0 0 var(--owner); transform: scale(1); }
+  20% { box-shadow: 0 0 0 4px var(--owner), 0 0 22px 8px var(--owner); transform: scale(1.06); }
+  45% { box-shadow: 0 0 0 3px var(--owner), 0 0 14px 4px var(--owner); transform: scale(1); }
+  70% { box-shadow: 0 0 0 4px var(--owner), 0 0 22px 8px var(--owner); transform: scale(1.04); }
+  100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
+}
+
+/* Player tokens: bigger, with the player's initial */
+.token {
+  width: clamp(24px, 4.4cqmin, 46px);
+  height: auto;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: clamp(11px, 2.2cqmin, 22px);
+  line-height: 1;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 8px #0006, inset 0 -3px 0 #0003;
+  text-shadow: 0 1px 2px #0006;
+}
+.token.me { outline: 3px solid var(--saffron); outline-offset: 1px; }
+@media (min-width: 1151px) { .token { width: clamp(24px, 4.4cqmin, 46px); } }
+@media (prefers-reduced-motion: reduce) { .tile.set-glow { animation: none; box-shadow: 0 0 0 3px var(--owner); } }
+
+/* ---------- জমিদারি logo ---------- */
+:root { --logo-ink: #0b3a9e; --logo-accent: #2f6bff; }
+:root[data-theme="dark"] { --logo-ink: #9cc3ff; --logo-accent: #5b8cff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --logo-ink: #9cc3ff; --logo-accent: #5b8cff; } }
+/* The winner heading keeps using .logo; make it blue to match */
+.logo { color: var(--logo-ink); text-shadow: none; font-family: var(--font); font-weight: 700; }
+.logo-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.logo-mark { flex: none; filter: drop-shadow(0 0.04em 0.08em #0a2a7840); }
+.logo-word {
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--logo-ink);
+  padding-bottom: 0.06em; /* room for Bangla vowel signs below the line */
+}
+.home-logo { margin: 0; text-align: center; font-size: clamp(3rem, 13vw, 4.6rem); }
+.topbar-logo { font-size: 1.7rem; text-decoration: none; display: inline-flex; }
+.center-logo { margin: 0; font-size: clamp(2.2rem, 7.5cqmin, 4.4rem); }
+.center.compact .center-logo { font-size: 2rem; }
+
+/* smaller player tokens */
+.token { width: clamp(20px, 3.3cqmin, 34px); font-size: clamp(10px, 1.7cqmin, 16px); border-width: 2px; }
+@media (min-width: 1151px) { .token { width: clamp(20px, 3.3cqmin, 34px); } }
+
+/* ---------- roomier tiles, prices readable everywhere ---------- */
+.tile .body { padding: 0.45em 0.4em; gap: 0.2em; }
+.tile.side-left .body, .tile.side-right .body { padding: 0.35em 0.55em; }
+.tile .price { font-size: 0.9em; padding: 0.05em 0.5em; line-height: 1.35; }
+/* Phones and other small boards: drop the small picture on ordinary tiles so the
+   name and price get all the room (corners keep their icon) */
+@container (max-width: 520px) {
+  .tile:not(.corner) .icon { display: none; }
+  .tile .body { padding: 0.3em 0.2em; gap: 0.15em; }
+  .tile .name { -webkit-line-clamp: 2; line-height: 1.1; }
+  .tile .price { font-size: 1em; padding: 0.05em 0.35em; }
+}
+
+/* ---------- phones: zoomable board ---------- */
+.board-viewport { position: relative; width: 100%; }
+.board-frame { width: 100%; }
+.board-viewport.zoomed .board-frame {
+  height: min(64vh, 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--page);
+}
+.board-viewport.zoomed .board { width: 760px; max-width: none; }
+.zoom-toggle {
+  position: absolute; right: 8px; bottom: 8px; z-index: 6;
+  background: var(--surface); box-shadow: 0 2px 8px #0003;
+}
+.board-viewport:not(.zoomed) .zoom-toggle { bottom: auto; top: calc(100% + 6px); position: relative; display: block; margin: 6px 0 0 auto; }
+
+/* Tile text follows the board's size (the board is the size container) */
+.tile { font-size: clamp(7px, 1.8cqmin, 17px); }
+/* top/bottom tiles are short: a slightly smaller icon leaves room for a two-line name and the price */
+.tile.side-bottom:not(.corner) .icon, .tile.side-top:not(.corner) .icon { font-size: 1.35em; }
+.tile.side-bottom:not(.corner) .name, .tile.side-top:not(.corner) .name { line-height: 1.05; }
+.tile.side-bottom:not(.corner) .body, .tile.side-top:not(.corner) .body { gap: 0.12em; padding-top: 0.3em; padding-bottom: 0.3em; }
+/* keep the board's contents underneath the zoom button */
+.board-frame { position: relative; z-index: 0; isolation: isolate; }
+.zoom-toggle { z-index: 20; }
+/* the zoomed board scrolls inside its frame; the page itself never scrolls sideways */
+.board-wrap { min-width: 0; max-width: 100%; }
+.board-viewport, .board-viewport .board-frame { max-width: 100%; min-width: 0; }
+.game-layout > * { min-width: 0; }
+/* side airports: keep long names clear of the corner flag */
+.tile.has-corner-flag.side-left .body, .tile.has-corner-flag.side-right .body { padding-right: 1.75em; }

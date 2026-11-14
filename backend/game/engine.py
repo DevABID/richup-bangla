@@ -35,6 +35,12 @@ SETTING_RULES = {
     "go_salary": (int, 0, 1000),
 }
 
+# Timed auction: a countdown starts, anyone can bid any time, and every bid
+# gives everyone at least BID_SECONDS more. When the clock hits zero, the
+# highest bidder wins.
+AUCTION_SECONDS = 10
+BID_SECONDS = 6
+
 LOG_LIMIT = 80
 CHAT_LIMIT = 100
 
@@ -80,9 +86,10 @@ def public_state(state):
 
 
 class Game:
-    def __init__(self, state, rng=None):
+    def __init__(self, state, rng=None, clock=None):
         self.s = state
         self.rng = rng or random.SystemRandom()
+        self.clock = clock or time.time
         self.events = []
 
     # ------------------------------------------------------------------ map
@@ -212,12 +219,6 @@ class Game:
                 here = [p for p in self.s["players"] if p["online"]]
                 if here:
                     self.s["host"] = here[0]["id"]
-            # Don't let an offline player stall an auction
-            auc = self.s["auction"]
-            if auc and pid in auc["active"] and auc["high_bidder"] != pid:
-                auc["active"].remove(pid)
-                self._log("fold", player=pid)
-                self._check_auction()
 
     def a_update_settings(self, pid, payload):
         if pid != self.s["host"] or self.s["status"] != "lobby":
@@ -522,9 +523,10 @@ class Game:
         self._require_phase("buy")
         tile = self.s["pending_buy"]
         if self.s["settings"]["auction"]:
+            now = self.clock()
             self.s["auction"] = {
                 "tile": tile, "high_bid": 0, "high_bidder": None,
-                "active": [pl["id"] for pl in self.alive()],
+                "started_at": now, "ends_at": now + AUCTION_SECONDS,
             }
             self.s["phase"] = "auction"
             self._log("auction_started", tile=tile)
@@ -537,43 +539,38 @@ class Game:
         self._require_playing()
         self._require_phase("auction")
         auc = self.s["auction"]
-        if pid not in auc["active"]:
+        pl = self.p(pid)
+        if pl["bankrupt"]:
             raise InvalidAction("not_in_auction")
+        if auc["high_bidder"] == pid:
+            raise InvalidAction("already_leading")  # can't outbid yourself
         try:
             amount = int((payload or {}).get("amount"))
         except (TypeError, ValueError):
             raise InvalidAction("bad_amount")
         if amount <= auc["high_bid"]:
             raise InvalidAction("bid_too_low")
-        if amount > self.p(pid)["money"]:
+        if amount > pl["money"]:
             raise InvalidAction("not_enough_money")
         auc["high_bid"], auc["high_bidder"] = amount, pid
+        auc["ends_at"] = max(auc["ends_at"], self.clock() + BID_SECONDS)
         self._log("bid", player=pid, amount=amount)
-        self._check_auction()
 
-    def a_fold(self, pid, _):
-        self._require_playing()
-        self._require_phase("auction")
-        auc = self.s["auction"]
-        if pid not in auc["active"]:
-            raise InvalidAction("not_in_auction")
-        if auc["high_bidder"] == pid:
-            raise InvalidAction("high_bidder_cannot_fold")
-        auc["active"].remove(pid)
-        self._log("fold", player=pid)
-        self._check_auction()
+    def tick(self):
+        """Ends the auction if its time is up. Called by the server's timer and
+        before every action, so a late bid can never sneak in."""
+        auc = self.s.get("auction")
+        if auc and self.s["status"] == "playing" and self.clock() >= auc["ends_at"]:
+            self._finish_auction()
+        return self.events
 
-    def _check_auction(self):
+    def _finish_auction(self):
         auc = self.s["auction"]
         if not auc:
             return
-        active = auc["active"]
-        done = len(active) == 0 or (len(active) == 1 and auc["high_bidder"] == active[0])
-        if not done:
-            return
         tile = auc["tile"]
-        if auc["high_bidder"]:
-            winner = self.p(auc["high_bidder"])
+        winner = self.p(auc["high_bidder"]) if auc["high_bidder"] else None
+        if winner and not winner["bankrupt"]:
             self._pay(winner, auc["high_bid"])
             self.s["properties"][str(tile)] = {"owner": winner["id"], "houses": 0, "mortgaged": False}
             self._log("auction_won", player=winner["id"], tile=tile, amount=auc["high_bid"])
@@ -754,15 +751,11 @@ class Game:
         self._log("bankrupt", player=pl["id"], creditor=creditor["id"] if creditor else None)
 
         auc = self.s["auction"]
-        if auc and pl["id"] in auc["active"]:
-            auc["active"].remove(pl["id"])
-            if auc["high_bidder"] == pl["id"]:
-                auc["high_bidder"], auc["high_bid"] = None, 0
+        if auc and auc["high_bidder"] == pl["id"]:
+            auc["high_bidder"], auc["high_bid"] = None, 0
 
         if self._check_winner():
             return
-        if self.s["auction"]:
-            self._check_auction()
         if self.current_id == pl["id"]:
             self.s["auction"] = None
             self.s["pending_buy"] = None
@@ -781,7 +774,7 @@ class Game:
     # ------------------------------------------------------------------ dispatch
     ACTIONS = {
         "update_settings", "choose_color", "kick", "leave", "start",
-        "roll", "pay_fine", "use_card", "end_turn", "buy", "decline", "bid", "fold",
+        "roll", "pay_fine", "use_card", "end_turn", "buy", "decline", "bid",
         "build", "sell_house", "mortgage", "unmortgage",
         "propose_trade", "accept_trade", "decline_trade", "cancel_trade", "bankrupt",
     }
@@ -791,6 +784,7 @@ class Game:
             raise InvalidAction("unknown_action")
         if not self.has(pid):
             raise InvalidAction("spectator")
+        self.tick()
         try:
             getattr(self, f"a_{action}")(pid, payload)
         except (KeyError, IndexError, TypeError, ValueError) as exc:

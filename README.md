@@ -1,4 +1,4 @@
-# টাঁকশাল (Tanksal)
+# জমিদারি (Jomidari)
 
 A real-time multiplayer property-trading game set across Bangladesh, in Bangla and English, with text chat and a built-in voice call.
 
@@ -70,17 +70,26 @@ Server to client: `welcome` (board, cards, your id), `state` (full public state 
 
 Actions: `update_settings`, `choose_color`, `kick`, `leave`, `start`, `roll`, `pay_fine`, `use_card`, `buy`, `decline`, `bid`, `fold`, `end_turn`, `build`, `sell_house`, `mortgage`, `unmortgage`, `propose_trade`, `accept_trade`, `decline_trade`, `cancel_trade`, `bankrupt`.
 
+### Auctions
+
+When a player doesn't buy a property, it goes to a timed auction. A 10-second countdown starts and every player, including the one who passed, can bid at any time with the quick-bid buttons (+2, +10, +50, +100). Each new bid gives everyone at least 6 more seconds. When the clock reaches zero, the highest bidder pays and gets the property; with no bids, it stays unsold. The server runs the clock, so every player sees the same countdown and a late bid can't sneak in.
+
+### Sounds
+
+Dice, buying, rent, cards, jail, bids, the auction hammer, your-turn alerts and chat all have short sounds, made in the browser with the Web Audio API (no audio files). Each player can mute them with the 🔊 button.
+
 ### Room rules (host can change in the lobby)
 
 Map, max players, starting cash, money for passing Start, auctions, a "Tea break" pot for taxes and fines, no rent while in the traffic jam, even building, double rent on full sets, mortgages and random turn order.
 
 ## Maps
 
-Four maps are included, and the host picks one in the lobby:
+Five maps are included, and the host picks one in the lobby:
 
 - **সারা বাংলাদেশ**: districts and divisional cities up to Gulshan
 - **ঢাকা শহর**: Dhaka neighbourhoods
 - **ভ্রমণ বাংলাদেশ**: tourist spots
+- **বিশ্ব ভ্রমণ**: one country per colour group, with country flags, from Nepal up to Switzerland
 - **MIST × BUP ক্যাম্পাস**: the Mirpur Cantonment campus, with its own corners (ভর্তি, রিটেক, ক্যান্টিন আড্ডা, ড্রেস কোড ভঙ্গ!), its own card decks (নোটিশ বোর্ড and ব্যাচ গ্রুপ) and a funny one-liner on every place
 
 Every map shares the same 40-slot layout from `maps/base.py`: the same prices, rents, colour groups and tile types. A map supplies names, icons and optionally taglines, corner names and its own cards, so all maps are equally balanced. Tile 39 is always the priciest property, which is why cards can point at tile numbers on any map.
@@ -112,6 +121,8 @@ Requests are also saved in the database, and you can optionally post them to a D
 ## Voice calls
 
 Voice uses WebRTC in a mesh: each player connects directly to every other player in the call, and the Django socket only relays the connection setup messages. Audio never passes through your server, so it costs you no bandwidth. A mesh works well for audio with up to about 8 people.
+
+Browsers never let a website turn on the microphone by itself, so each player taps Allow once. The game makes that easy: before the browser asks, it explains what's coming; if the microphone was blocked, it shows step-by-step instructions for that player's browser (Chrome, Edge, Firefox, Safari, Samsung Internet, Android, iPhone) with a "Try again" button; and if the link was opened inside Facebook, Messenger or Instagram, whose built-in browsers often block the microphone, it asks the player to open it in Chrome or Safari and copies the link for them. Once in the call, a level bar shows that the microphone is working.
 
 Two things matter in production:
 

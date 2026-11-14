@@ -3,10 +3,10 @@
 To add a map: create a file like dhaka.py that defines MAP = GameMap(...),
 import it here and add it to MAPS. The lobby picks it up automatically.
 """
-from . import bangladesh, cantonment, dhaka, tourism
+from . import bangladesh, cantonment, dhaka, tourism, world
 from .base import BOARD_SIZE, GO_SALARY, JAIL_FINE, JAIL_POSITION, OWNABLE, GameMap, MapError  # noqa: F401
 
-MAPS = {m.MAP.id: m.MAP for m in (bangladesh, dhaka, tourism, cantonment)}
+MAPS = {m.MAP.id: m.MAP for m in (bangladesh, dhaka, tourism, world, cantonment)}
 DEFAULT_MAP = "bangladesh"
 
 

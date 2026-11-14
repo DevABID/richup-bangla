@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getName } from "../lib/identity";
 import { num } from "../lib/format";
 import LanguageToggle from "./LanguageToggle";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 const EMPTY = { map_name: "", theme: "", places: "", requester_name: getName(), contact: "", website: "" };
@@ -49,7 +50,7 @@ export default function MapRequest() {
   return (
     <>
       <header className="topbar">
-        <Link to="/" className="logo">{t("app.title")}</Link>
+        <Link to="/" className="topbar-logo" aria-label={t("app.title")}><Logo /></Link>
         <div className="row"><ThemeToggle /><LanguageToggle /></div>
       </header>
 

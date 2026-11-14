@@ -6,6 +6,8 @@ import { getName, setName } from "../lib/identity";
 import { useVoice } from "../lib/useVoice";
 import GameView from "./GameView";
 import LanguageToggle from "./LanguageToggle";
+import Logo from "./Logo";
+import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import Lobby from "./Lobby";
 import Toasts from "./Toasts";
@@ -53,9 +55,10 @@ export default function Room() {
   return (
     <>
       <header className="topbar">
-        <Link to="/" className="logo">{t("app.title")}</Link>
+        <Link to="/" className="topbar-logo" aria-label={t("app.title")}><Logo /></Link>
         <div className="row">
           {!connected && <span className="status-pill">{game ? t("app.reconnecting") : t("app.connecting")}</span>}
+          <SoundToggle />
           <ThemeToggle />
           <LanguageToggle />
         </div>

@@ -2,8 +2,8 @@ from django.contrib import admin
 
 from .models import MapRequest
 
-admin.site.site_header = "টাঁকশাল · Admin"
-admin.site.site_title = "Tanksal admin"
+admin.site.site_header = "জমিদারি · Admin"
+admin.site.site_title = "Jomidari admin"
 
 
 @admin.register(MapRequest)

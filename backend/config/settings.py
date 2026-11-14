@@ -14,7 +14,7 @@ RENDER_HOST = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_HOST:
     ALLOWED_HOSTS.append(RENDER_HOST)
 
-# e.g. "https://tanksal.com" in production; "*" is only for local dev
+# e.g. "https://jomidari.com" in production; "*" is only for local dev
 _default_origins = "*" if DEBUG else (f"https://{RENDER_HOST}" if RENDER_HOST else "")
 WS_ALLOWED_ORIGINS = os.environ.get("WS_ALLOWED_ORIGINS", _default_origins).split(",")
 
@@ -70,7 +70,12 @@ DATABASES = {
     "default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
 }
 
-# Map requests are also posted here (Discord channel > Integrations > Webhooks)
+# Map requests are emailed to MAP_REQUEST_EMAIL through Resend (resend.com).
+# Set both on your host, not in the code: the repository is public.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+MAP_REQUEST_EMAIL = os.environ.get("MAP_REQUEST_EMAIL", "")
+
+# Optional: also post map requests to a Discord channel webhook
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
 REDIS_URL = os.environ.get("REDIS_URL")

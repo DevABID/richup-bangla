@@ -18,9 +18,17 @@ class ScriptedRng:
         pass
 
 
-def started(n=2, rolls=(), **settings):
+class FakeClock:
+    def __init__(self, t=1000.0):
+        self.t = t
+
+    def __call__(self):
+        return self.t
+
+
+def started(n=2, rolls=(), clock=None, **settings):
     state = new_game("TEST")
-    g = Game(state, ScriptedRng(rolls))
+    g = Game(state, ScriptedRng(rolls), clock=clock or FakeClock())
     for i in range(n):
         g.add_player(f"p{i}", f"Player {i}")
     g.a_update_settings("p0", {"randomize_order": False, **settings})
@@ -68,8 +76,8 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(g.s["phase"], "roll")
         g.handle("p0", "roll")             # -> 6 (buy phase)
         g.handle("p0", "decline")          # auction starts
-        g.handle("p1", "fold")
-        g.handle("p0", "fold")
+        g.clock.t += 11                    # nobody bids, time runs out
+        g.tick()
         self.assertEqual(g.s["phase"], "roll")
         g.handle("p0", "roll")             # third double
         self.assertTrue(g.p("p0")["in_jail"])
@@ -94,17 +102,61 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(g2.p("p0")["money"], 1500 - 200)
         self.assertFalse(any(e["type"] == "passed_go" for e in g2.s["log"]))
 
-    def test_auction(self):
-        g = started(rolls=[1, 2])
+    def test_timed_auction(self):
+        clock = FakeClock()
+        g = started(n=3, rolls=[1, 2], clock=clock)
+        g.handle("p0", "roll")
+        g.handle("p0", "decline")
+        auc = g.s["auction"]
+        self.assertEqual(auc["ends_at"], 1010)
+        g.handle("p1", "bid", {"amount": 30})
+        with self.assertRaises(InvalidAction):
+            g.handle("p2", "bid", {"amount": 20})     # must beat the high bid
+        clock.t = 1007                                 # 3 seconds left
+        g.handle("p0", "bid", {"amount": 40})          # the player who declined can bid too
+        self.assertEqual(g.s["auction"]["ends_at"], 1013)   # bid gives 6 more seconds
+        clock.t = 1012
+        g.tick()
+        self.assertIsNotNone(g.s["auction"])           # not over yet
+        clock.t = 1013
+        g.tick()
+        self.assertIsNone(g.s["auction"])
+        self.assertEqual(g.s["properties"]["3"]["owner"], "p0")
+        self.assertEqual(g.p("p0")["money"], 1460)
+        self.assertEqual(g.s["phase"], "end")
+
+    def test_leader_cannot_outbid_themselves(self):
+        g = started(n=3, rolls=[1, 2])
         g.handle("p0", "roll")
         g.handle("p0", "decline")
         g.handle("p1", "bid", {"amount": 30})
+        with self.assertRaises(InvalidAction) as ctx:
+            g.handle("p1", "bid", {"amount": 40})
+        self.assertEqual(ctx.exception.key, "already_leading")
+        g.handle("p2", "bid", {"amount": 40})
+        g.handle("p1", "bid", {"amount": 50})          # outbid, so p1 may bid again
+        self.assertEqual(g.s["auction"]["high_bidder"], "p1")
+
+    def test_late_bid_cannot_sneak_in(self):
+        clock = FakeClock()
+        g = started(rolls=[1, 2], clock=clock)
+        g.handle("p0", "roll")
+        g.handle("p0", "decline")
+        g.handle("p1", "bid", {"amount": 30})
+        clock.t += 60                                  # the timer task was slow
         with self.assertRaises(InvalidAction):
-            g.handle("p0", "bid", {"amount": 20})
-        g.handle("p0", "fold")
+            g.handle("p0", "bid", {"amount": 500})     # auction already ended
         self.assertEqual(g.s["properties"]["3"]["owner"], "p1")
-        self.assertEqual(g.p("p1")["money"], 1470)
-        self.assertIsNone(g.s["auction"])
+
+    def test_unsold_when_nobody_bids(self):
+        clock = FakeClock()
+        g = started(rolls=[1, 2], clock=clock)
+        g.handle("p0", "roll")
+        g.handle("p0", "decline")
+        clock.t += 10
+        g.tick()
+        self.assertNotIn("3", g.s["properties"])
+        self.assertEqual(g.s["log"][-1]["type"], "auction_unsold")
 
     def test_even_build_and_house_rent(self):
         g = started(rolls=[1, 2])
@@ -187,15 +239,17 @@ class EngineTests(unittest.TestCase):
         g.handle("a", "update_settings", {"starting_cash": 99999})
         self.assertEqual(g.s["settings"]["starting_cash"], 5000)
 
-    def test_offline_player_folds_auction(self):
-        g = started(n=3, rolls=[1, 2])
+    def test_high_bidder_going_bankrupt_clears_bid(self):
+        clock = FakeClock()
+        g = started(n=3, rolls=[1, 2], clock=clock)
         g.handle("p0", "roll")
         g.handle("p0", "decline")
-        g.handle("p1", "bid", {"amount": 20})
-        g.set_online("p2", False)
-        g.handle("p0", "fold")
-        self.assertEqual(g.s["properties"]["3"]["owner"], "p1")
-
+        g.handle("p2", "bid", {"amount": 50})
+        g.handle("p2", "bankrupt")
+        self.assertIsNone(g.s["auction"]["high_bidder"])
+        clock.t += 10
+        g.tick()
+        self.assertNotIn("3", g.s["properties"])
 
 if __name__ == "__main__":
     unittest.main()

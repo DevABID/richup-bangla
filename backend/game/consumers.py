@@ -9,15 +9,61 @@ Client -> server messages:
 Server -> client messages:
   welcome, state, chat, rtc, error
 """
+import asyncio
+import logging
 import re
 import time
 from urllib.parse import parse_qs
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.layers import get_channel_layer
 
 from .engine import COLORS, Game, InvalidAction, new_game, public_state
 from .maps import maps_for_client
 from .store import store
+
+log = logging.getLogger(__name__)
+_auction_timers = {}  # room -> asyncio.Task that ends the room's auction on time
+
+
+async def broadcast(room, state, events):
+    await get_channel_layer().group_send(
+        f"room_{room}",
+        # server_time lets every browser line up its countdown with the server's clock
+        {"type": "state.update", "state": public_state(state), "events": events, "server_time": time.time()},
+    )
+
+
+def watch_auction(room, state):
+    """Make sure a timer is waiting to end this room's auction, if it has one."""
+    task = _auction_timers.get(room)
+    if state.get("auction") and not (task and not task.done()):
+        _auction_timers[room] = asyncio.ensure_future(_run_auction_timer(room))
+
+
+async def _run_auction_timer(room):
+    try:
+        while True:
+            state = await store.get(room)
+            auc = state and state.get("auction")
+            if not auc:
+                return
+            await asyncio.sleep(max(0.05, auc["ends_at"] - time.time()))
+            async with store.lock(room):
+                state = await store.get(room)
+                if not state or not state.get("auction"):
+                    return
+                game = Game(state)
+                events = game.tick()
+                if not events:
+                    continue  # a bid added time; wait again
+                await store.save(room, state)
+            await broadcast(room, state, events)
+    except Exception:
+        log.exception("auction timer failed for room %s", room)
+    finally:
+        _auction_timers.pop(room, None)
+
 
 ROOM_RE = re.compile(r"^[A-Z0-9]{4,10}$")
 PID_RE = re.compile(r"^[A-Za-z0-9-]{8,40}$")
@@ -138,14 +184,13 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def _broadcast(self, state, events):
-        await self.channel_layer.group_send(
-            self.group,
-            {"type": "state.update", "state": public_state(state), "events": events},
-        )
+        await broadcast(self.room, state, events)
+        watch_auction(self.room, state)
 
     # -------------------------------------------------------------- group events
     async def state_update(self, event):
-        await self.send_json({"type": "state", "state": event["state"], "events": event["events"]})
+        await self.send_json({"type": "state", "state": event["state"], "events": event["events"],
+                              "server_time": event.get("server_time")})
 
     async def chat_message(self, event):
         await self.send_json({"type": "chat", "msg": event["msg"]})

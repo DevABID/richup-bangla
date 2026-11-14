@@ -13,7 +13,7 @@ export default function TurnControls() {
   const { game, board, you, act } = useGame();
   const lastRoll = [...game.log].reverse().find((e) => e.type === "rolled");
   const me = playerById(game, you);
-  const canRoll = game.status === "playing" && game.phase === "roll"
+  const canRoll = !game.walking && game.status === "playing" && game.phase === "roll"
     && currentPlayerId(game) === you && me && me.money >= 0;
 
   return (

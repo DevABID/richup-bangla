@@ -111,9 +111,10 @@ class GameMap:
                 the card tiles.
     decks:      optional {"chance": [...], "community": [...]} with this map's
                 own cards (same format as cards.py); defaults to the shared deck.
+    flags:      optional {slot: "jp"} country codes, shown as a flag on the tile.
     """
 
-    def __init__(self, id, name_bn, name_en, desc_bn, desc_en, places, deck_names=None, decks=None):
+    def __init__(self, id, name_bn, name_en, desc_bn, desc_en, places, deck_names=None, decks=None, flags=None):
         self.id = id
         self.name_bn, self.name_en = name_bn, name_en
         self.desc_bn, self.desc_en = desc_bn, desc_en
@@ -131,6 +132,8 @@ class GameMap:
             elif tile["type"] in (deck_names or {}):
                 _apply(tile, deck_names[tile["type"]])
             tile.setdefault("icon", DEFAULT_ICONS.get(tile["type"]))
+            if flags and i in flags:
+                tile["flag"] = flags[i]
             if not tile.get("name_bn") or not tile.get("name_en"):
                 raise MapError(f"map {id!r}: tile {i} has no name")
             self.TILES.append(tile)

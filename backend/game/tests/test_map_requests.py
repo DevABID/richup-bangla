@@ -1,6 +1,11 @@
 import unittest
 
-from game.map_requests import MapRequestError, RateLimiter, clean_map_request, discord_message
+import json
+from unittest import mock
+
+from game.map_requests import (
+    MapRequestError, RateLimiter, clean_map_request, discord_message, email_subject, email_text, send_resend,
+)
 
 GOOD = {
     "map_name": "চট্টগ্রাম শহর",
@@ -60,6 +65,40 @@ class MapRequestTests(unittest.TestCase):
         self.assertIn("Rafi", msg)
         long = clean_map_request({**GOOD, "places": "জায়গা " * 550, "theme": "t" * 1000})
         self.assertLessEqual(len(discord_message(long, 1, "https://x/admin/")), 2000)
+
+    def test_email_has_all_details(self):
+        req = clean_map_request(GOOD)
+        text = email_text(req, 12)
+        for part in ("#12", "চট্টগ্রাম শহর", "পতেঙ্গা", "Rafi", "rafi@example.com", "Reply to this email"):
+            self.assertIn(part, text)
+        self.assertIn("চট্টগ্রাম শহর", email_subject(req))
+
+    def test_subject_has_no_line_breaks(self):
+        req = clean_map_request({**GOOD, "map_name": "Dhaka\nBcc: x@y.com"})
+        self.assertNotIn("\n", email_subject(req))
+
+    def test_resend_request_shape(self):
+        captured = {}
+
+        class Resp:
+            status = 200
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        def fake_urlopen(req, timeout):
+            captured["url"], captured["headers"] = req.full_url, dict(req.header_items())
+            captured["body"] = json.loads(req.data)
+            return Resp()
+
+        with mock.patch("urllib.request.urlopen", fake_urlopen):
+            send_resend("re_test", "me@example.com", "Subj", "Body", reply_to="rafi@example.com")
+            self.assertEqual(captured["url"], "https://api.resend.com/emails")
+            self.assertEqual(captured["headers"]["Authorization"], "Bearer re_test")
+            self.assertEqual(captured["body"]["from"], "Jomidari <onboarding@resend.dev>")
+            self.assertEqual(captured["body"]["to"], ["me@example.com"])
+            self.assertEqual(captured["body"]["reply_to"], "rafi@example.com")
+            send_resend("re_test", "me@example.com", "Subj", "Body", reply_to="01700-000000")
+            self.assertNotIn("reply_to", captured["body"])   # a phone number isn't an email
 
 
 if __name__ == "__main__":

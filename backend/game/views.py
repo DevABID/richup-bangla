@@ -8,7 +8,10 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .map_requests import MapRequestError, RateLimiter, clean_map_request, discord_message, send_discord
+from .map_requests import (
+    MapRequestError, RateLimiter, clean_map_request, discord_message, email_subject, email_text,
+    send_discord, send_resend,
+)
 from .store import store
 
 log = logging.getLogger(__name__)
@@ -50,8 +53,8 @@ def frontend(request):
 @csrf_exempt
 @require_POST
 async def map_request(request):
-    """Anyone can suggest a new map. Saved to the database (see /admin/) and,
-    if DISCORD_WEBHOOK_URL is set, posted to your Discord channel."""
+    """Anyone can suggest a new map. It is emailed to MAP_REQUEST_EMAIL (via
+    Resend), saved to the database, and optionally posted to Discord."""
     from .models import MapRequest
 
     if not map_request_limiter.allow(_client_ip(request)):
@@ -67,6 +70,15 @@ async def map_request(request):
         return JsonResponse({"ok": True})
 
     obj = await MapRequest.objects.acreate(**clean)
+
+    if settings.RESEND_API_KEY and settings.MAP_REQUEST_EMAIL:
+        try:
+            await asyncio.to_thread(
+                send_resend, settings.RESEND_API_KEY, settings.MAP_REQUEST_EMAIL,
+                email_subject(clean), email_text(clean, obj.id), clean.get("contact"),
+            )
+        except Exception:  # the request is saved either way
+            log.exception("Could not email map request")
 
     if settings.DISCORD_WEBHOOK_URL:
         admin_url = request.build_absolute_uri(f"/admin/game/maprequest/{obj.id}/change/")

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getName, setName } from "../lib/identity";
 import LanguageToggle from "./LanguageToggle";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Home() {
@@ -50,7 +51,7 @@ export default function Home() {
           <ThemeToggle />
           <LanguageToggle />
         </div>
-        <h1 className="logo">{t("app.title")}</h1>
+        <h1 className="home-logo"><Logo /></h1>
         <p className="tagline">{t("app.tagline")}</p>
         <div className="panel" style={{ display: "grid", gap: 14 }}>
           <label className="field">

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Tanksal",
+    "title": "Jomidari",
     "tagline": "Buy, build and trade your way across Bangladesh with friends",
     "language": "বাংলা",
     "connecting": "Connecting…",
@@ -70,16 +70,20 @@
     "winnerSub": "The richest player standing.",
     "backHome": "Back to home",
     "ok": "OK",
-    "tapDice": "Tap the dice to roll"
+    "tapDice": "Tap the dice to roll",
+    "wholeBoard": "Whole board",
+    "zoomBoard": "Zoom in"
   },
   "auction": {
     "title": "Auction: {{tile}}",
     "highBid": "Highest bid {{amount}} — {{name}}",
     "noBids": "No bids yet",
     "bid": "Bid",
-    "fold": "Drop out",
-    "out": "You've dropped out of this auction",
-    "custom": "Amount"
+    "youLead": "You're winning!",
+    "timeLeft": "{{secs}}s left",
+    "closing": "Auction closing…",
+    "yourCash": "You have {{amount}}",
+    "waitOthers": "Yours is the top bid. You can bid again if someone outbids you."
   },
   "property": {
     "price": "Price",
@@ -136,8 +140,75 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "empty": "Nobody is in the call",
-    "micDenied": "Microphone permission was blocked. Allow it in your browser settings.",
-    "needsHttps": "Voice calls need HTTPS"
+    "micTest": "Speak — if the bar moves, your mic works",
+    "mutedNote": "You're muted",
+    "blockedHint": "Microphone is blocked — how to turn it on?",
+    "help": {
+      "introTitle": "Allow your microphone",
+      "introBody": "To talk in the call, your browser will ask to use your microphone. After you tap the button below, a message like this appears at the top — tap Allow. You only need to do this once.",
+      "fakePrompt": "wants to use your microphone",
+      "allowAndJoin": "Allow and join the call",
+      "waiting": "Tap Allow in the browser's message…",
+      "blockedTitle": "Your microphone is blocked",
+      "blockedBody": "Block was probably tapped earlier. Turn it on like this:",
+      "retry": "Try again",
+      "reloadHint": "If it still doesn't work, reload the page once. You won't lose your seat.",
+      "steps": {
+        "chrome": [
+          "Tap the 🔒 (lock) icon left of the address bar",
+          "Set Microphone to Allow",
+          "Tap “Try again” below"
+        ],
+        "edge": [
+          "Tap the 🔒 icon left of the address bar",
+          "Permissions for this site → Microphone → Allow",
+          "Tap “Try again” below"
+        ],
+        "firefox": [
+          "Tap the crossed-out mic 🎙️ icon in the address bar",
+          "Tap the ✕ next to Blocked to remove it",
+          "Tap “Try again” below"
+        ],
+        "safari": [
+          "In the menu bar choose Safari → Settings for This Website",
+          "Set Microphone to Allow",
+          "Tap “Try again” below"
+        ],
+        "android": [
+          "Tap the icon (🔒 or ⚙️) left of the address bar",
+          "Permissions → turn on Microphone",
+          "If it's not there: ⋮ → Settings → Site settings → Microphone → Allow this site",
+          "Tap “Try again” below"
+        ],
+        "samsung": [
+          "Tap the 🔒 icon left of the address bar",
+          "Permissions → Microphone → Allow",
+          "Tap “Try again” below"
+        ],
+        "ios": [
+          "Tap aA on the left of the address bar",
+          "Website Settings → Microphone → Allow",
+          "If that doesn't work: iPhone Settings → Safari → Microphone → Allow",
+          "Tap “Try again” below"
+        ]
+      },
+      "inAppTitle": "Open in Chrome or Safari",
+      "inAppBody": {
+        "ios": "You're in Facebook/Messenger's built-in browser, where the microphone often doesn't work. Copy the link and open it in Safari, or use the ••• menu and choose “Open in Safari”.",
+        "other": "You're in Facebook/Messenger's built-in browser, where the microphone often doesn't work. Copy the link and open it in Chrome, or use the ⋮ menu and choose “Open in Chrome”."
+      },
+      "copyLink": "Copy the room link",
+      "copied": "Copied! Now paste it in Chrome/Safari",
+      "copyManual": "Copy this link:",
+      "tryAnyway": "Try here anyway",
+      "problemTitle": "Couldn't turn on the microphone",
+      "problem": {
+        "nomic": "No microphone was found. Plug in headphones or a mic and try again.",
+        "busy": "Another app (like a Messenger call or Zoom) is using the microphone. Close it and try again.",
+        "https": "The site must be opened with https:// for voice calls.",
+        "other": "Something went wrong. Reload the page and try again."
+      }
+    }
   },
   "log": {
     "joined": "{{name}} joined",
@@ -157,7 +228,6 @@
     "card": "{{name}}: {{text}}",
     "auction_started": "{{tile}} is up for auction",
     "bid": "{{name}} bid {{amount}}",
-    "fold": "{{name}} dropped out of the auction",
     "auction_won": "{{name}} won {{tile}} at auction for {{amount}}",
     "auction_unsold": "Nobody bought {{tile}}",
     "built": "{{name}} built on {{tile}}",
@@ -188,7 +258,6 @@
     "not_mortgaged": "Not mortgaged",
     "mortgage_disabled": "Mortgages are off in this room",
     "bid_too_low": "Bid must beat the current highest bid",
-    "high_bidder_cannot_fold": "The highest bidder can't drop out",
     "not_in_auction": "You're not in this auction",
     "trade_invalid": "That trade isn't valid",
     "trade_empty": "Offer or request something",
@@ -208,7 +277,8 @@
     "bad_request": "Request not understood",
     "unknown_action": "Request not understood",
     "unknown_player": "Player not found",
-    "unknown_map": "That map doesn't exist"
+    "unknown_map": "That map doesn't exist",
+    "already_leading": "You already have the top bid"
   },
   "theme": {
     "light": "Light",
@@ -249,5 +319,9 @@
       "bad_request": "The request couldn't be sent",
       "network": "Couldn't send. Check your internet connection and try again."
     }
+  },
+  "sound": {
+    "mute": "Mute sounds",
+    "unmute": "Turn sounds on"
   }
 }

@@ -26,6 +26,7 @@ export function useVoice() {
   const [joined, setJoined] = useState(false);
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState({});
+  const [level, setLevel] = useState(0); // your own mic level, 0 to 1, for the mic test bar
   const [error, setError] = useState(null);
 
   const joinedRef = useRef(false);
@@ -137,26 +138,36 @@ export function useVoice() {
         an.getByteTimeDomainData(buf);
         let sum = 0;
         for (const v of buf) sum += (v - 128) ** 2;
-        next[pid] = Math.sqrt(sum / buf.length) > 6;
+        const rms = Math.sqrt(sum / buf.length);
+        next[pid] = rms > 6;
+        if (pid === you) setLevel(Math.min(1, rms / 30));
       });
       setSpeaking(next);
-    }, 200);
+    }, 120);
     return () => clearInterval(id);
-  }, [joined]);
+  }, [joined, you]);
 
   const join = useCallback(async () => {
     setError(null);
-    if (!window.isSecureContext || !navigator.mediaDevices) {
-      setError("voice.needsHttps");
-      return;
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setError("https");
+      return false;
     }
     try {
       localStream.current = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-    } catch {
-      setError("voice.micDenied");
-      return;
+    } catch (err) {
+      // denied: the player (or the browser) blocked it · nomic: no microphone
+      // found · busy: another app is using the microphone
+      const name = err?.name || "";
+      setError(
+        name === "NotAllowedError" || name === "SecurityError" ? "denied"
+          : name === "NotFoundError" || name === "OverconstrainedError" ? "nomic"
+            : name === "NotReadableError" || name === "AbortError" ? "busy"
+              : "other"
+      );
+      return false;
     }
     watchLevel(you, localStream.current);
     audioCtx.current?.resume();
@@ -173,6 +184,7 @@ export function useVoice() {
       await peer.pc.setLocalDescription(offer);
       signal(p.id, { kind: "offer", sdp: peer.pc.localDescription });
     }
+    return true;
   }, [createPeer, send, signal, you]);
 
   const leave = useCallback(() => {
@@ -184,6 +196,7 @@ export function useVoice() {
     localStream.current = null;
     analysers.current.clear();
     setSpeaking({});
+    setLevel(0);
   }, [closePeer, send]);
 
   const toggleMute = useCallback(() => {
@@ -203,5 +216,5 @@ export function useVoice() {
   // Clean up when leaving the page
   useEffect(() => () => joinedRef.current && leave(), [leave]);
 
-  return { joined, muted, speaking, error, join, leave, toggleMute };
+  return { joined, muted, speaking, level, error, join, leave, toggleMute, clearError: () => setError(null) };
 }

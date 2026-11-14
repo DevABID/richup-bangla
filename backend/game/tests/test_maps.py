@@ -87,13 +87,27 @@ class MapTests(unittest.TestCase):
         self.assertFalse(pl["in_jail"])
         self.assertIn(card, state["decks"]["chance"])
 
+    def test_world_map_flags(self):
+        m = MAPS["world"]
+        self.assertEqual(m.TILES[39]["name_en"], "Zurich")
+        # every colour group is a single country
+        for group, ids in m.GROUPS.items():
+            flags = {m.TILES[i].get("flag") for i in ids}
+            if group == "utility":
+                self.assertEqual(flags, {None})
+            elif group != "railroad":
+                self.assertEqual(len(flags), 1, group)
+            for f in flags - {None}:
+                self.assertRegex(f, r"^[a-z]{2}$")
+        self.assertNotIn("flag", MAPS["dhaka"].TILES[1])
+
     def test_old_saved_games_without_map_still_load(self):
         state = new_game("OLD")
         del state["settings"]["map"]
         self.assertEqual(Game(state).map.id, "bangladesh")
 
     def test_random_games_on_every_map(self):
-        actions = ["roll", "buy", "end_turn", "decline", "fold", "bid", "build", "mortgage"]
+        actions = ["roll", "buy", "end_turn", "decline", "bid", "build", "mortgage"]
         for map_id in MAPS:
             for seed in range(40):
                 rng = random.Random(seed)
@@ -103,12 +117,14 @@ class MapTests(unittest.TestCase):
                     g.add_player(f"p{i}", f"P{i}")
                 g.handle("p0", "update_settings", {"map": map_id})
                 g.handle("p0", "start")
+                clock_t = [0.0]
                 for _ in range(1500):
                     if state["status"] != "playing":
                         break
                     payload = {"tile": rng.randrange(40), "amount": rng.randint(1, 300)}
+                    clock_t[0] += 1      # time moves on, so auctions end
                     try:
-                        Game(state, rng).handle(f"p{rng.randrange(3)}", rng.choice(actions), payload)
+                        Game(state, rng, clock=lambda: clock_t[0]).handle(f"p{rng.randrange(3)}", rng.choice(actions), payload)
                     except InvalidAction:
                         pass
 
